@@ -1,0 +1,6 @@
+name: TheFinals
+version: '$version'
+description: Reach The Finals
+author: yeeuou
+main: io.github.yeeuou.theFinals.TheFinals
+api-version: '1.21'

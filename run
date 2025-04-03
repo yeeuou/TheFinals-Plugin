@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# 옵션 설정
+
+# 서버 종류(serverType)-버전(version)-빌드(build)
+server="paper-1.21.4-222"
+# 최대 플레이어 수
+maxPlayer=5
+# 서버 파일
+dir=".server"
+# 최대 메모리 (GB)
+memoryMax=4
+# 최소 메모리 (GB)
+memoryMin=4
+# 월드 파일
+worldFile="worlds"
+# 플러그인 파일
+pluginFile="plugins"
+# EULA 동의 (true | false)
+agreeEULA=true
+# 서버 재시작 여부
+restart=false
+## 백업 사용 (미지원)
+#backup=false
+
+# 서버 파일 생성
+mkdir -p "$dir/JARs"
+
+IFS=- read -r serverType version build <<< "$server"; IFS=' '
+
+# check unsupported server
+[[ "$serverType" != "paper" ]] && echo "not support other than paper server." && exit
+
+# 최신 빌드 가져오기
+if [ "$build" == "latest" ]; then
+  getBuild=$(curl -s "https://api.papermc.io/v2/projects/paper/versions/$version")
+  getBuild="${getBuild#*"builds":}"
+  # 따옴표 묶지마셈
+  IFS=','; getBuild=(${getBuild:1:-2}); IFS=' '
+  build="${getBuild[${#getBuild[@]} -1]}"
+  echo "latest build is $build"
+fi
+
+# jar 이름 가져오기
+downloadFile=$(curl -s "https://api.papermc.io/v2/projects/paper/versions/$version/builds/$build")
+downloadFile="${downloadFile#*\"downloads\":}"
+downloadFile="${downloadFile%%\",*}"
+downloadFile="${downloadFile##*:\"}"
+server="$downloadFile"
+
+## jar이 스크립트가 있는곳에 존재하면 서버 파일로 이동
+#if [ -f "$server" ]; then
+#  mv "$server" "$dir"
+# 서버 파일안에 jar이 존재하는지 확인
+if [ ! -f "$dir/JARs/$server" ]; then
+  echo "download '$server'"
+  powerShell <<< "wget https://api.papermc.io/v2/projects/paper/versions/$version/builds/$build/downloads/$server -outFile $dir/JARs/$server" &>/dev/null 2>&1
+#  wait
+  echo "download complete"
+fi
+
+# 서버 파일로 이동
+cd "$dir" || exit
+
+
+# EULA 동의 검사
+if [[ ! "$agreeEULA" =~ ^(true|false)$ ]]; then
+  agreeEULA="false"
+fi
+
+# 인수 설정
+jvm_args=(
+  "-Xmx${memoryMax}G"
+  "-Xms${memoryMin}G"
+  "-Dfile.encoding=UTF-8"
+  "-Dcom.mojang.eula.agree=$agreeEULA"
+  "-jar"
+  "JARs/$server"
+)
+
+# 서버 인수 설정
+[ $maxPlayer -gt -1 ] && jvm_args+=("-s$maxPlayer")
+[ ! -z $worldFile ] && jvm_args+=("-W$worldFile")
+[ ! -z $pluginFile ] && jvm_args+=("-P$pluginFile")
+jvm_args+=("-nogui")
+
+
+echo "============[server options]============"
+echo "서버 파일(server_file): $dir"
+echo "월드 파일(world_file): $worldFile"
+echo "플러그인 파일(plugin_file): $pluginFile"
+echo "최대 메모리(max_memory): $memoryMax"
+echo "최소 메모리(min_memory): $memoryMin"
+echo "최대 플레이어 수(max_player): $maxPlayer"
+echo "서버(server-jar): $server"
+echo "========================================"
+
+printf "\nstart server..\n\n"
+
+# 서버 시작
+while :; do
+  java "${jvm_args[@]}"
+  if [ $restart == true ]; then
+    ans=
+    read -rn 1 -p "restart server?(Y/N)> " ans
+    [[ "$ans" == [Nn] ]] && exit
+    echo -e "\nrestart server..\n\n"
+    continue
+  else break
+  fi
+done
