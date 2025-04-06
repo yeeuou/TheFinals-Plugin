@@ -37,19 +37,22 @@ class ReviveAnimation(
                 Component.text("[길게 웅크려서 부활]"),
                 noFadeInOut
             ))
-        }
-        else {
+        } else {
             // TODO 부활중 움직일 수 없도록
             val sb = StringBuilder("[")
             for (i in 1..20)
-                if (i <= progress / 5) sb.append('=')
+                if (i * 5 <= progress) sb.append('=')
                 else sb.append(' ')
             player.showTitle(Title.title(
                 Component.text(""), Component.text("$sb]"),
                 noFadeInOut
             ))
-            if (progress >= reviveMaxProgress)
+            if (progress >= reviveMaxProgress) {
                 figure.owner.respawn(false)
+                player.removeMetadata("tf_holdRevive", TheFinals.instance)
+                player.resetTitle()
+                task.cancel()
+            }
             else progress++
         }
     }

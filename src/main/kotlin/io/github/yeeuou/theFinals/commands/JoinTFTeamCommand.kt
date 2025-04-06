@@ -8,8 +8,11 @@ import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
+import io.github.yeeuou.theFinals.DummyPlayer
 import io.github.yeeuou.theFinals.TeamManager
 import io.github.yeeuou.theFinals.TFTeam
+import io.github.yeeuou.theFinals.TeamManager.tfPlayer
+import io.github.yeeuou.theFinals.TeamManager.unregisterPlayer
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType
@@ -25,27 +28,30 @@ object JoinTFTeamCommand : AbstractCommand() {
             .then(Commands.argument("target", ArgumentTypes.players())
                 .executes { ctx ->
                     val tfTeam = ctx.getArgument("team", TFTeam::class.java)
-//                        val tfTeam: TFTeam = runCatching {
-//                            TFTeam.valueOf(
-//                                StringArgumentType.getString(ctx, "team").uppercase())
-//                        }.getOrElse {
-//                            ctx.source.sender.sendMessage(
-//                                text("There is no team of the designated name.")
-//                                    .color(NamedTextColor.RED)
-//                            )
-//                            return@executes Command.SINGLE_SUCCESS
-//                        }
                     val targets = ctx.getArgument("target", PlayerSelectorArgumentResolver::class.java)
                         .resolve(ctx.source)
                     targets.forEach {
                         TeamManager.registerNewPlayer(it, tfTeam)
                     }
                     ctx.source.sender.sendMessage(
-                        text("${targets.size} 명의 플레이어를 추가했습니다."))
+                        text("${targets.size}명의 플레이어를 추가했습니다"))
                     Command.SINGLE_SUCCESS
                 }
             )
         ).build()
+
+    val ejectCmd = Commands.literal("leave-tfteam")
+        .then(Commands.argument("target", ArgumentTypes.players())
+            .executes {
+                val target = it.getArgument("target",
+                    PlayerSelectorArgumentResolver::class.java).resolve(it.source)
+                var replaced = 0
+                target.forEach {
+                    if (it.tfPlayer()?.unregisterPlayer() != null) replaced++
+                }
+                it.source.sender.sendMessage("${replaced}명의 플레이어를 변경했습니다")
+                Command.SINGLE_SUCCESS
+            })
 
     val testCmd = Commands.literal("tftest")
         .executes {
@@ -54,7 +60,7 @@ object JoinTFTeamCommand : AbstractCommand() {
                 loc.world.spawn(loc, Villager::class.java) {
                     it.setAI(false)
                     it.setGravity(false)
-//                    it.joinTfTeam(TFTeam.RED)
+                    DummyPlayer(it)
                     it.addScoreboardTag(TeamManager.TAG_DUMMY)
                 }
             }

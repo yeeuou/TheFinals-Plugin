@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.yeeuou"
-version = "0.1-ALPHA"
+version = "0.2-ALPHA"
 
 repositories {
     mavenCentral()

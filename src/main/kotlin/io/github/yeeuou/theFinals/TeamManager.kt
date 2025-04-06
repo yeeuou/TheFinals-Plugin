@@ -28,5 +28,8 @@ object TeamManager {
         }
         registerTFPlayer(TFPlayer(player, tfTeam))
     }
+    fun TFPlayer.unregisterPlayer() {
+        playerByPlayers.remove(player)
+        tfTeam.removePlayer(this)
+    }
 }
-

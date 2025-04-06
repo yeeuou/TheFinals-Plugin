@@ -58,9 +58,9 @@ class TFPlayer(
     fun playDeadEffect() {
         player.gameMode = GameMode.SPECTATOR
         player.spawnParticle(
-            Particle.BLOCK_CRUMBLE,
+            Particle.BLOCK,
             player.location.add(0.0 ,1.0, 0.0),
-            300,
+            250,
             .2,
             .45,
             .2,
@@ -105,6 +105,12 @@ class TFPlayer(
         player.foodLevel = 20
         player.saturation = 5f
 //        player.addPotionEffect(PotionEffectType.RESISTANCE.createEffect(5, 5))
+    }
+
+    fun reviveFromFigure() {
+        val loc = requireNotNull(figure.figureLoc) { "No revive without figure!" }
+        figure.remove()
+        isDead = false
     }
 
     private inner class WaitingRespawn : Consumer<BukkitTask> {
