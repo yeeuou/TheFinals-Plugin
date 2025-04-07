@@ -6,6 +6,7 @@ import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Particle
 import org.bukkit.entity.Player
@@ -40,6 +41,8 @@ class TFPlayer(
         private set
 
     private var changeWaitAnimation = false
+
+    private var waitTeamRespawn = false
 
     val figure = Figure(this)
 
@@ -76,13 +79,13 @@ class TFPlayer(
                 respawnTime = TFSettings.playerRespawnTick
                 Bukkit.getScheduler().runTaskTimer(
                     TheFinals.instance,
-                    WaitingRespawn(),
-                    0L, 20L
+                    WaitRespawnTime(),
+                    0, 1
                 )
             } else Bukkit.getScheduler().runTaskTimer(
                 TheFinals.instance,
                 WaitReviveFromTeam(),
-                0L, 20L
+                0, 1
             )
         }
     }
@@ -99,27 +102,32 @@ class TFPlayer(
                 z = z + it.nextInt(7) - 3
             }
         }.toCenterLocation().toHighestLocation().add(0.0,1.0,0.0)
-        player.gameMode = GameMode.SURVIVAL
-        player.teleport(respawnLoc)
-        player.noDamageTicks = 20 * 2
-        player.foodLevel = 20
-        player.saturation = 5f
-//        player.addPotionEffect(PotionEffectType.RESISTANCE.createEffect(5, 5))
+        playerRespawnProcess(respawnLoc)
     }
 
     fun reviveFromFigure() {
         val loc = requireNotNull(figure.figureLoc) { "No revive without figure!" }
         figure.remove()
         isDead = false
+        playerRespawnProcess(loc)
     }
 
-    private inner class WaitingRespawn : Consumer<BukkitTask> {
+    private fun playerRespawnProcess(loc: Location) {
+        player.gameMode = GameMode.SURVIVAL
+        player.teleport(loc)
+        player.noDamageTicks = 20 * 2
+        player.foodLevel = 20
+        player.saturation = 5f
+    }
+
+    private inner class WaitRespawnTime : Consumer<BukkitTask> {
+        private var tick = 0
         override fun accept(task: BukkitTask) {
-            if (changeWaitAnimation) {
-                changeWaitAnimation = false
+            if (!isDead || waitTeamRespawn) {
                 task.cancel()
                 return
             }
+            if (tick++ % 20 != 0) return
             if (respawnTime > 0) {
                 respawnTime--
                 player.sendActionBar(
@@ -127,8 +135,8 @@ class TFPlayer(
             } else {
                 Bukkit.getScheduler().runTaskTimer(
                     TheFinals.instance,
-                    PressToStartAnimation(),
-                    0L, 10L
+                    PressStartAnimation(),
+                    0, 1
                 )
                 task.cancel()
             }
@@ -149,18 +157,17 @@ class TFPlayer(
         }
     }
     fun startTeamRespawnTask() {
-        changeWaitAnimation = true
+        waitTeamRespawn = true
         Bukkit.getScheduler().runTaskTimer(
             TheFinals.instance,
             WaitTeamRespawn(),
-            0L, 20L
+            0, 20
         )
     }
 
     private inner class WaitReviveFromTeam : Consumer<BukkitTask> {
         override fun accept(task: BukkitTask) {
-            if (!isDead || changeWaitAnimation) {
-                changeWaitAnimation = false
+            if (!isDead || waitTeamRespawn) {
                 player.resetTitle()
                 task.cancel()
                 return
@@ -169,18 +176,20 @@ class TFPlayer(
         }
     }
 
-    private inner class PressToStartAnimation : Consumer<BukkitTask> {
+    private inner class PressStartAnimation : Consumer<BukkitTask> {
         private var colorIndex = 0
             set(value) {
                 field = value % rainbowColors.lastIndex
             }
+        private var tick = 0
+
         override fun accept(task: BukkitTask) {
-            if (!isDead || changeWaitAnimation) {
-                changeWaitAnimation = false
+            if (!isDead || waitTeamRespawn) {
                 player.resetTitle()
                 task.cancel()
                 return
             }
+            if (tick++ % 10 != 0) return
             player.showTitle(Title.title(
                 Component.text(""),
                 Component.text("SNEAK START")
