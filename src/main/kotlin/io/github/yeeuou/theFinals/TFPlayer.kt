@@ -9,6 +9,7 @@ import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Particle
+import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import java.time.Duration
@@ -40,13 +41,9 @@ class TFPlayer(
     var isDead = false
         private set
 
-    private var changeWaitAnimation = false
-
     private var waitTeamRespawn = false
 
     val figure = Figure(this)
-
-//    private var waitTask: BukkitTask? = null
 
     init {
         tfTeam.addPlayer(this)
@@ -68,6 +65,10 @@ class TFPlayer(
             .45,
             .2,
             Material.GOLD_BLOCK.createBlockData()
+        )
+        player.world.playSound(
+            player.location, Sound.BLOCK_CHAIN_BREAK,
+            .5f, 1f
         )
         isDead = true
         if (tfTeam.isAllPlayerDead()) {

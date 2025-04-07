@@ -31,6 +31,7 @@ class TheFinals : JavaPlugin() {
         server.pluginManager.registerEvents(GameEvents(), this)
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
             it.registrar().register(JoinTFTeamCommand.joinCmd)
+            it.registrar().register(JoinTFTeamCommand.ejectCmd)
             it.registrar().register(JoinTFTeamCommand.testCmd)
             it.registrar().register(Commands.literal("test").executes{
                 if (it.source.sender is Player)

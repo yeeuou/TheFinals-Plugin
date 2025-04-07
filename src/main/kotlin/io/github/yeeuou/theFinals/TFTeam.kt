@@ -24,9 +24,11 @@ enum class TFTeam(val color: NamedTextColor) {
 
     fun addPlayer(p: TFPlayer) {
         players.add(p)
+        team.addPlayer(p.player)
     }
     fun removePlayer(p: TFPlayer) {
         players.remove(p)
+        team.removePlayer(p.player)
     }
 
     fun getFirstAlivePlayer() = players.firstOrNull { !it.isDead }

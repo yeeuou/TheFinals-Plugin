@@ -60,7 +60,6 @@ class GameEvents : Listener {
                 it.asDummyFigure()?.run {
                     ev.player.setMetadata("tf_holdRevive",
                         FixedMetadataValue(TheFinals.instance, null))
-                    reviving = true
                     Bukkit.getScheduler().runTaskTimer(
                         TheFinals.instance,
                         DummyFigureRevive(ev.player, this),

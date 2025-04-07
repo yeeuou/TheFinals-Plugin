@@ -17,8 +17,10 @@ import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver
+import org.bukkit.entity.Pillager
 import org.bukkit.entity.Player
 import org.bukkit.entity.Villager
+import org.bukkit.entity.Vindicator
 import java.util.concurrent.CompletableFuture
 
 object JoinTFTeamCommand : AbstractCommand() {
@@ -51,17 +53,17 @@ object JoinTFTeamCommand : AbstractCommand() {
                 }
                 it.source.sender.sendMessage("${replaced}명의 플레이어를 변경했습니다")
                 Command.SINGLE_SUCCESS
-            })
+            }).build()
 
     val testCmd = Commands.literal("tftest")
         .executes {
             if (it.source.sender is Player) {
                 val loc = (it.source.sender as Player).location
-                loc.world.spawn(loc, Villager::class.java) {
+                loc.world.spawn(loc, Pillager::class.java) {
                     it.setAI(false)
                     it.setGravity(false)
+                    it.equipment.setItemInMainHand(null)
                     DummyPlayer(it)
-                    it.addScoreboardTag(TeamManager.TAG_DUMMY)
                 }
             }
             Command.SINGLE_SUCCESS

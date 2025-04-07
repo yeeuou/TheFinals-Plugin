@@ -41,7 +41,8 @@ class ReviveAnimation(
             // TODO 부활중 움직일 수 없도록
             val sb = StringBuilder("[")
             for (i in 1..20)
-                if (i * 5 <= progress) sb.append('=')
+                // 진행 바가 끝까지 도달하게 함
+                if (i * 5 <= progress + 1) sb.append('=')
                 else sb.append(' ')
             player.showTitle(Title.title(
                 Component.text(""), Component.text("$sb]"),

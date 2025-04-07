@@ -2,10 +2,8 @@ package io.github.yeeuou.theFinals
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
-import org.bukkit.Bukkit
-import org.bukkit.Color
-import org.bukkit.Material
-import org.bukkit.Particle
+import net.kyori.adventure.util.Ticks
+import org.bukkit.*
 import org.bukkit.entity.*
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
@@ -76,6 +74,10 @@ class DummyPlayer(
             .2,
             Material.GOLD_BLOCK.createBlockData()
         )
+        entity.world.playSound(
+            entity.location, Sound.BLOCK_CHAIN_BREAK,
+            .5f, 1f
+        )
         Bukkit.getScheduler().runTaskLater(
             TheFinals.instance,
             DelayRespawnAction(),
@@ -88,12 +90,13 @@ class DummyPlayer(
         entityByDummy.remove(entity)
         dummyFigure?.remove()
         entity.world.spawn(dummyFigure?.location ?: entity.location,
-            Villager::class.java) {
+            Pillager::class.java) {
             it.setAI(false)
             it.setGravity(false)
-            DummyPlayer(it)
-            it.addScoreboardTag(TeamManager.TAG_DUMMY)
+//            it.addScoreboardTag(TeamManager.TAG_DUMMY)
             it.noDamageTicks = 30
+            it.equipment.setItemInMainHand(null)
+            DummyPlayer(it)
         }
     }
 
@@ -126,6 +129,7 @@ class DummyFigureRevive(
         }
         if (!player.isSneaking) {
             if (progress > 0) progress = 0
+            figure.reviving = false
             player.showTitle(
                 Title.title(
                 Component.text(""),
@@ -133,9 +137,11 @@ class DummyFigureRevive(
                 Title.Times.times(Duration.ZERO, Duration.ofSeconds(1), Duration.ZERO)
             ))
         } else {
+            figure.reviving = true
             val sb = StringBuilder("[")
             for (i in 1..20)
-                if (i <= progress / 5) sb.append('=')
+                // 진행 바가 끝까지 도달하게 함
+                if (i * 5 <= progress + 1) sb.append('=')
                 else sb.append(' ')
             player.showTitle(Title.title(
                 Component.text(""), Component.text("$sb]"),
