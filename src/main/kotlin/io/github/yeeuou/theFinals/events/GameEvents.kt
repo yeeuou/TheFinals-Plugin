@@ -4,18 +4,19 @@ import io.github.yeeuou.theFinals.DummyFigureRevive
 import io.github.yeeuou.theFinals.DummyPlayer
 import io.github.yeeuou.theFinals.DummyPlayer.Companion.asDummyFigure
 import io.github.yeeuou.theFinals.Figure.Companion.figure
+import io.github.yeeuou.theFinals.TFPlayer.Companion.getSpectatePlayer
 import io.github.yeeuou.theFinals.TeamManager.tfPlayer
 import io.github.yeeuou.theFinals.TheFinals
-import io.github.yeeuou.theFinals.task.ReviveAnimation
-import net.kyori.adventure.text.Component
+import io.github.yeeuou.theFinals.task.ReviveAnimationTask
 import org.bukkit.Bukkit
+import org.bukkit.GameMode
 import org.bukkit.entity.ArmorStand
-import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerTeleportEvent
 import org.bukkit.metadata.FixedMetadataValue
@@ -36,6 +37,7 @@ class GameEvents : Listener {
     fun figureDestroy(ev: EntityDeathEvent) {
         (ev.entity as? ArmorStand)?.figure()?.let {
             ev.isCancelled = true
+            return
         }
         (ev.entity as? ArmorStand)?.asDummyFigure()?.let {
             ev.isCancelled = true
@@ -52,7 +54,7 @@ class GameEvents : Listener {
                     FixedMetadataValue(TheFinals.instance, null))
                 server.scheduler.runTaskTimer(
                     TheFinals.instance,
-                    ReviveAnimation(ev.player, it),
+                    ReviveAnimationTask(ev.player, it),
                     0L, 1L
                 )
             }
@@ -83,5 +85,20 @@ class GameEvents : Listener {
     fun spectatorTeleport(ev: PlayerTeleportEvent) {
         if (ev.cause == PlayerTeleportEvent.TeleportCause.SPECTATE)
             ev.isCancelled = true
+    }
+
+    @EventHandler
+    fun spectatorClickMouseBtn(ev: PlayerInteractEvent) {
+        if (ev.player.gameMode != GameMode.SPECTATOR) return
+        ev.player.tfPlayer()?.run {
+            if (!isDead) return
+            runCatching {
+                player.spectatorTarget = runCatching {
+                    if (ev.action.isRightClick) {
+                        tfTeam.getPrevAlivePlayer(getSpectatePlayer()!!).player
+                    } else tfTeam.getNextAlivePlayer(getSpectatePlayer()!!).player
+                }.getOrElse { tfTeam.getFirstAlivePlayer().player }
+            }.onFailure { it.printStackTrace() }
+        }
     }
 }

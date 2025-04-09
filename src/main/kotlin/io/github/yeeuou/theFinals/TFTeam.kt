@@ -15,7 +15,7 @@ enum class TFTeam(val color: NamedTextColor) {
 
     private val players = mutableListOf<TFPlayer>()
 
-    fun isAllPlayerDead(): Boolean {
+    fun isAllPlayerDead(): Boolean { // 오프라인인 플레이어가 리스트에 없도록 처리
         players.filter { it.player.isOnline }.forEach {
             if (!it.isDead) return false
         }
@@ -31,7 +31,30 @@ enum class TFTeam(val color: NamedTextColor) {
         team.removePlayer(p.player)
     }
 
+    // 다음 플레이어 관전
+    fun getNextAlivePlayer(current: TFPlayer): TFPlayer {
+        val alivePlayers = players.filter { !it.isDead }
+        if (alivePlayers.isEmpty()) throw IllegalStateException("This team is wiped.")
+        // 한명만 살았을 때
+        if (alivePlayers.size == 1) return current
+        val currentIndex = alivePlayers.indexOf(current)
+//        // 현재 관전중인 플레이어가 리스트의 끝에 있을 때
+//        if (alivePlayers.lastIndex == currentIndex) return alivePlayers[0]
+        return alivePlayers[(currentIndex + 1) % alivePlayers.lastIndex]
+    }
+
+    // 이전 플레이어 관전
+    fun getPrevAlivePlayer(current: TFPlayer): TFPlayer {
+        val alivePlayers = players.filter { !it.isDead }
+        if (alivePlayers.isEmpty()) throw IllegalStateException("This team is wiped.")
+        // 한명만 살았을 때
+        if (alivePlayers.size == 1) return current
+        val currentIndex = alivePlayers.indexOf(current)
+        return alivePlayers[(currentIndex - 1 + alivePlayers.lastIndex) % alivePlayers.lastIndex]
+    }
+
     fun getFirstAlivePlayer() = players.firstOrNull { !it.isDead }
+        ?: throw IllegalStateException("This team is wiped.")
 
     fun playTeamWipeEffect() {
         players.filter { it.player.isOnline }.forEach {
@@ -45,25 +68,25 @@ enum class TFTeam(val color: NamedTextColor) {
                         Title.Times.times(
                             Ticks.duration(10),
                             Duration.ofSeconds(2),
-                            Ticks.duration(15)
+                            Ticks.duration(13)
                         )
                     )
                 )
                 inventory.clear()
+                exp = 0f
+                level = 0
             }
             it.startTeamRespawnTask()
-            it.figure.remove()
         }
     }
 
     val team: Team
-        get() {
-            val board = Bukkit.getScoreboardManager().mainScoreboard
-            return board.getTeam("TF_$color") ?: board.registerNewTeam("TF_$color")
-                .apply {
-                    color(this@TFTeam.color)
-                    setCanSeeFriendlyInvisibles(true)
-                    setAllowFriendlyFire(false)
-                }
+        get() = Bukkit.getScoreboardManager().mainScoreboard.run {
+            getTeam("TF_$color") ?:
+            registerNewTeam("TF_$color").apply {
+                color(this@TFTeam.color)
+                setCanSeeFriendlyInvisibles(true)
+                setAllowFriendlyFire(false)
+            }
         }
 }

@@ -30,11 +30,14 @@ class TFPlayer(
             NamedTextColor.BLUE,
             NamedTextColor.DARK_PURPLE
         )
+        val spectatorPlayers = mutableMapOf<TFPlayer, TFPlayer>()
+        fun TFPlayer.getSpectatePlayer() = spectatorPlayers[this]
     }
 
     var tfTeam = tfTeam
         private set
-    private var coin: Int = TFSettings.startCoin
+
+    private var coin: Int = TFConfig.startCoin
 
     private var respawnTime = 0
 
@@ -43,11 +46,13 @@ class TFPlayer(
 
     private var waitTeamRespawn = false
 
-    val figure = Figure(this)
+    private val figure = Figure(this)
 
     init {
         tfTeam.addPlayer(this)
     }
+
+    // 플레이어 스탯 저장(접속시 불러오기, 플레이어가 나갈 때/플러그인 언로드시 저장)
 
     fun changeTeam(to: TFTeam) {
         tfTeam.removePlayer(this)
@@ -72,12 +77,17 @@ class TFPlayer(
         )
         isDead = true
         if (tfTeam.isAllPlayerDead()) {
-            respawnTime = TFSettings.teamRespawnTick - 10
+            respawnTime = TFConfig.teamRespawnTick - 10
             tfTeam.playTeamWipeEffect()
         } else {
             figure.spawn()
+            Bukkit.getScheduler().runTaskTimer(
+                TheFinals.instance,
+                SpectateOnTeam(),
+                20 * 3, 1
+            )
             if (coin > 0) {
-                respawnTime = TFSettings.playerRespawnTick
+                respawnTime = TFConfig.playerRespawnTick
                 Bukkit.getScheduler().runTaskTimer(
                     TheFinals.instance,
                     WaitRespawnTime(),
@@ -119,6 +129,8 @@ class TFPlayer(
         player.noDamageTicks = 20 * 2
         player.foodLevel = 20
         player.saturation = 5f
+        player.arrowsInBody = 0
+        spectatorPlayers.remove(this)
     }
 
     private inner class WaitRespawnTime : Consumer<BukkitTask> {
@@ -136,34 +148,12 @@ class TFPlayer(
             } else {
                 Bukkit.getScheduler().runTaskTimer(
                     TheFinals.instance,
-                    PressStartAnimation(),
+                    PressStartTask(),
                     0, 1
                 )
                 task.cancel()
             }
         }
-    }
-
-    private inner class WaitTeamRespawn : Consumer<BukkitTask> {
-        override fun accept(task: BukkitTask) {
-            if (respawnTime > 0) {
-                player.sendActionBar(
-                    Component.text("팀 리스폰까지: $respawnTime"))
-                respawnTime--
-            } else {
-                respawn(false)
-                player.sendActionBar(Component.text())
-                task.cancel()
-            }
-        }
-    }
-    fun startTeamRespawnTask() {
-        waitTeamRespawn = true
-        Bukkit.getScheduler().runTaskTimer(
-            TheFinals.instance,
-            WaitTeamRespawn(),
-            0, 20
-        )
     }
 
     private inner class WaitReviveFromTeam : Consumer<BukkitTask> {
@@ -177,7 +167,34 @@ class TFPlayer(
         }
     }
 
-    private inner class PressStartAnimation : Consumer<BukkitTask> {
+    /**
+     * 매 초마다 업데이트
+     */
+    private inner class WaitTeamRespawn : Consumer<BukkitTask> {
+        override fun accept(task: BukkitTask) {
+            if (respawnTime > 0) {
+                player.sendActionBar(
+                    Component.text("팀 리스폰까지: $respawnTime"))
+                respawnTime--
+            } else {
+                waitTeamRespawn = false
+                respawn(false)
+                player.sendActionBar(Component.text())
+                task.cancel()
+            }
+        }
+    }
+    fun startTeamRespawnTask() {
+        figure.remove()
+        waitTeamRespawn = true
+        Bukkit.getScheduler().runTaskTimer(
+            TheFinals.instance,
+            WaitTeamRespawn(),
+            0, 20
+        )
+    }
+
+    private inner class PressStartTask : Consumer<BukkitTask> {
         private var colorIndex = 0
             set(value) {
                 field = value % rainbowColors.lastIndex
@@ -197,7 +214,26 @@ class TFPlayer(
                     .decorate(TextDecoration.BOLD).color(rainbowColors[colorIndex++]),
                 Title.Times.times(Duration.ZERO, Duration.ofSeconds(1), Duration.ZERO)
             ))
-            player.sendActionBar(Component.text("크레딧 $coin"))
+            player.sendActionBar(
+                Component.text()
+                    .append(
+                        Component.text("(웅크리기로 부활) ")
+                            .decorate(TextDecoration.ITALIC).color(NamedTextColor.GRAY)
+                    ).append(Component.text("크레딧 $coin"))
+            )
+        }
+    }
+
+    private inner class SpectateOnTeam : Consumer<BukkitTask> {
+        override fun accept(task: BukkitTask) {
+            if (!isDead || waitTeamRespawn) {
+                task.cancel()
+                return
+            }
+            if (getSpectatePlayer() == null)
+                spectatorPlayers[this@TFPlayer] = tfTeam.getFirstAlivePlayer()
+            if (player.spectatorTarget == null)
+                player.spectatorTarget = getSpectatePlayer()?.player
         }
     }
 }

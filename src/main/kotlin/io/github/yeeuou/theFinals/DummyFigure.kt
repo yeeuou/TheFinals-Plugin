@@ -2,7 +2,6 @@ package io.github.yeeuou.theFinals
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
-import net.kyori.adventure.util.Ticks
 import org.bukkit.*
 import org.bukkit.entity.*
 import org.bukkit.inventory.EquipmentSlot
@@ -13,7 +12,7 @@ import java.time.Duration
 import java.util.function.Consumer
 
 class DummyPlayer(
-    val entity: LivingEntity
+    private val entity: LivingEntity
 ) {
     companion object {
         val entityByDummy = mutableMapOf<LivingEntity, DummyPlayer>()
@@ -113,8 +112,8 @@ class DummyPlayer(
 }
 
 class DummyFigureRevive(
-    val player: Player,
-    val figure: DummyPlayer
+    private val player: Player,
+    private val figure: DummyPlayer
 ) : Consumer<BukkitTask> {
     private var progress = 0
     private val maxProgress = 100

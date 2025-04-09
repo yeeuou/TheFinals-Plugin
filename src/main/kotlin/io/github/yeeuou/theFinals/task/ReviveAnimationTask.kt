@@ -12,7 +12,7 @@ import org.bukkit.scheduler.BukkitTask
 import java.time.Duration
 import java.util.function.Consumer
 
-class ReviveAnimation(
+class ReviveAnimationTask(
     private val player: Player,
     private val figure: Figure
 ) : Consumer<BukkitTask> {
@@ -49,7 +49,7 @@ class ReviveAnimation(
                 noFadeInOut
             ))
             if (progress >= reviveMaxProgress) {
-                figure.owner.respawn(false)
+                figure.owner.reviveFromFigure()
                 player.removeMetadata("tf_holdRevive", TheFinals.instance)
                 player.resetTitle()
                 task.cancel()

@@ -54,15 +54,8 @@ class Figure(
             }
         }
         spawnedFigures[figureEntity!!] = this
-//        owner.player.run {
-//            figureEntity.spawnAt(location.setRotation(0f, location.pitch))
-//            figureEntity.equipment.run {
-////                (chestplate.itemMeta as LeatherArmorMeta).setColor(figureColor)
-////                (leggings.itemMeta as LeatherArmorMeta).setColor(figureColor)
-//                (boots.itemMeta as LeatherArmorMeta).setColor(color)
-//            }
-//        }
     }
+
     fun remove() {
         if (!owner.isDead) return
         spawnedFigures.remove(figureEntity)

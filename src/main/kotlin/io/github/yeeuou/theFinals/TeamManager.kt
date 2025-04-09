@@ -3,11 +3,6 @@ package io.github.yeeuou.theFinals
 import org.bukkit.entity.Player
 
 object TeamManager {
-    const val TAG_JOINED = "tf_joined"
-    const val TAG_DUMMY = "tfDummy"
-
-//    val activePlayerTeam = mutableMapOf<Player, TFTeam>()
-
     val playerByPlayers = mutableMapOf<Player, TFPlayer>()
 
 //    fun Player.tfActivated(t: TFTeam) {
