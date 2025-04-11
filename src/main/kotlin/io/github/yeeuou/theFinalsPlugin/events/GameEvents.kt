@@ -1,11 +1,12 @@
 package io.github.yeeuou.theFinalsPlugin.events
 
+import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent
 import io.github.yeeuou.theFinalsPlugin.DummyFigureRevive
 import io.github.yeeuou.theFinalsPlugin.DummyPlayer
 import io.github.yeeuou.theFinalsPlugin.DummyPlayer.Companion.asDummyFigure
 import io.github.yeeuou.theFinalsPlugin.Figure.Companion.figure
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.getSpectatePlayer
-import io.github.yeeuou.theFinalsPlugin.TeamManager.tfPlayer
+import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
 import io.github.yeeuou.theFinalsPlugin.task.ReviveAnimationTask
 import org.bukkit.Bukkit
@@ -16,8 +17,10 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.PlayerAdvancementDoneEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerTeleportEvent
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.util.Vector
@@ -100,5 +103,28 @@ class GameEvents : Listener {
                 }.getOrElse { tfTeam.getFirstAlivePlayer().player }
             }.onFailure { it.printStackTrace() }
         }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    fun exitSpector(ev: PlayerStopSpectatingEntityEvent) {
+        ev.player.tfPlayer()?.run {
+            if (canRespawn)
+                Bukkit.getScheduler().runTaskLater( // TODO 중복실행 가능한지 검사
+                    TheFinalsPlugin.instance,
+                    { -> respawn(true) },
+                    10
+                )
+            ev.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun playerGetAdvancement(ev: PlayerAdvancementDoneEvent) {
+        ev.player.tfPlayer()?.addCoin()
+    }
+
+    @EventHandler
+    fun playerLeave(ev: PlayerQuitEvent) {
+        ev.player.tfPlayer()?.unload()
     }
 }

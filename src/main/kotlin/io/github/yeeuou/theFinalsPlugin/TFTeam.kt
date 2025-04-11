@@ -29,6 +29,8 @@ enum class TFTeam(val color: NamedTextColor) {
     fun removePlayer(p: TFPlayer) {
         players.remove(p)
         team.removePlayer(p.player)
+        if (players.isNotEmpty() && isAllPlayerDead())
+            playTeamWipeEffect()
     }
 
     // 다음 플레이어 관전

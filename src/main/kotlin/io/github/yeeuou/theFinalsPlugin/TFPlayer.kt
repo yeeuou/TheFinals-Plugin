@@ -10,13 +10,15 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Particle
 import org.bukkit.Sound
+import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
+import java.io.File
 import java.time.Duration
 import java.util.function.Consumer
 import kotlin.random.Random
 
-class TFPlayer(
+class TFPlayer private constructor (
     val player: Player,
     tfTeam: TFTeam
 ) {
@@ -30,8 +32,26 @@ class TFPlayer(
             NamedTextColor.BLUE,
             NamedTextColor.DARK_PURPLE
         )
+
+        val playerByPlayers = mutableMapOf<Player, TFPlayer>()
+        fun Player.tfPlayer() = playerByPlayers[this]
+        fun registerOrUpdatePlayer(p: Player, team: TFTeam) {
+            p.tfPlayer()?.run {
+                changeTeam(team)
+                return
+            }
+            TFPlayer(p, team).let {
+                playerByPlayers[it.player] = it
+                it.tfTeam.addPlayer(it)
+            }
+        }
+
+        private const val ROOT_KEY = "TFPlayer"
+
         val spectatorPlayers = mutableMapOf<TFPlayer, TFPlayer>()
         fun TFPlayer.getSpectatePlayer() = spectatorPlayers[this]
+
+        fun load() {}
     }
 
     var tfTeam = tfTeam
@@ -41,6 +61,9 @@ class TFPlayer(
 
     private var respawnTime = 0
 
+    val canRespawn
+        get() = respawnTime <= 0 && coin > 0
+
     var isDead = false
         private set
 
@@ -48,11 +71,40 @@ class TFPlayer(
 
     private val figure = Figure(this)
 
-    init {
-        tfTeam.addPlayer(this)
-    }
+//    init {
+//        tfTeam.addPlayer(this)
+//    }
 
     // 플레이어 스탯 저장(접속시 불러오기, 플레이어가 나갈 때/플러그인 언로드시 저장)
+
+    fun unload() {
+        save()
+        tfTeam.removePlayer(this)
+        if (isDead) {
+            figure.remove()
+            spectatorPlayers.remove(this)
+        }
+    }
+
+    private fun save() {
+        val file = File(
+            TheFinalsPlugin.instance.dataFolder,
+            "players/${player.uniqueId}.yml"
+        ).also { it.parentFile.mkdirs() }
+        val yaml = YamlConfiguration()
+        yaml.createSection(ROOT_KEY).let {
+            it["coin"] = coin
+            it["respawnTime"] = respawnTime
+            it["tfTeam"] = tfTeam.name
+        }
+        yaml.save(file)
+    }
+
+    fun unregister() {}
+
+    fun addCoin() {
+        coin++
+    }
 
     fun changeTeam(to: TFTeam) {
         tfTeam.removePlayer(this)
@@ -73,7 +125,7 @@ class TFPlayer(
         )
         player.world.playSound(
             player.location, Sound.BLOCK_CHAIN_BREAK,
-            .5f, 1f
+            .5f, .8f
         )
         isDead = true
         if (tfTeam.isAllPlayerDead()) {
@@ -109,8 +161,8 @@ class TFPlayer(
         val respawnLoc = player.respawnLocation ?:
         Bukkit.getServer().worlds.first().spawnLocation.apply {
             Random(System.nanoTime()).let {
-                x = x + it.nextInt(7) - 3
-                z = z + it.nextInt(7) - 3
+                x += it.nextInt(-3, 3)
+                z += it.nextInt(-3, 3)
             }
         }.toCenterLocation().toHighestLocation().add(0.0,1.0,0.0)
         playerRespawnProcess(respawnLoc)

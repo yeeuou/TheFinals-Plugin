@@ -9,19 +9,19 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import io.github.yeeuou.theFinalsPlugin.DummyPlayer
-import io.github.yeeuou.theFinalsPlugin.TeamManager
+import io.github.yeeuou.theFinalsPlugin.TFPlayer
 import io.github.yeeuou.theFinalsPlugin.TFTeam
-import io.github.yeeuou.theFinalsPlugin.TeamManager.tfPlayer
-import io.github.yeeuou.theFinalsPlugin.TeamManager.unregisterPlayer
+import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver
+import net.kyori.adventure.text.Component
 import org.bukkit.entity.Pillager
 import org.bukkit.entity.Player
 import java.util.concurrent.CompletableFuture
 
-object JoinTFTeamCommand : AbstractCommand() {
+object JoinTFTeamCommand {
     val joinCmd = Commands.literal("join-tfteam")
         .requires { it.sender.isOp }
         .then(Commands.argument("team", TFTeamArgument())
@@ -31,7 +31,7 @@ object JoinTFTeamCommand : AbstractCommand() {
                     val targets = ctx.getArgument("target", PlayerSelectorArgumentResolver::class.java)
                         .resolve(ctx.source)
                     targets.forEach {
-                        TeamManager.registerNewPlayer(it, tfTeam)
+                        TFPlayer.registerOrUpdatePlayer(it, tfTeam)
                     }
                     ctx.source.sender.sendMessage(
                         text("${targets.size}명의 플레이어를 추가했습니다"))
@@ -46,8 +46,8 @@ object JoinTFTeamCommand : AbstractCommand() {
                 val target = it.getArgument("target",
                     PlayerSelectorArgumentResolver::class.java).resolve(it.source)
                 var replaced = 0
-                target.forEach {
-                    if (it.tfPlayer()?.unregisterPlayer() != null) replaced++
+                target.forEach { p ->
+                    if (p.tfPlayer()?.unregister() != null) replaced++
                 }
                 it.source.sender.sendMessage("${replaced}명의 플레이어를 변경했습니다")
                 Command.SINGLE_SUCCESS
@@ -66,6 +66,8 @@ object JoinTFTeamCommand : AbstractCommand() {
             }
             Command.SINGLE_SUCCESS
         }.build()
+
+    private fun text(str: String) = Component.text(str)
 }
 
 class TFTeamArgument : CustomArgumentType<TFTeam, String> {

@@ -15,11 +15,6 @@ class Figure(
         val spawnedFigures = mutableMapOf<ArmorStand, Figure>()
         fun ArmorStand.figure() = spawnedFigures[this]
     }
-    private val head = ItemStack(Material.PLAYER_HEAD).apply {
-        val meta = (itemMeta as SkullMeta)
-        meta.owningPlayer = owner.player
-        itemMeta = meta
-    }
 
     private var figureEntity: ArmorStand? = null
 
@@ -40,7 +35,11 @@ class Figure(
                 it.equipment.run {
                     val meta = ItemStack(Material.LEATHER_HELMET).itemMeta as LeatherArmorMeta
                     meta.setColor(color)
-                    helmet = head
+                    helmet = ItemStack(Material.PLAYER_HEAD).apply {
+                        val skullMeta = (itemMeta as SkullMeta)
+                        skullMeta.owningPlayer = owner.player
+                        itemMeta = skullMeta
+                    }
                     chestplate = ItemStack(Material.LEATHER_CHESTPLATE).apply {
                         itemMeta = meta
                     }
