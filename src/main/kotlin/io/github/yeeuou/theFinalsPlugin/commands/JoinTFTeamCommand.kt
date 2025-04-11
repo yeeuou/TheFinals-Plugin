@@ -1,4 +1,4 @@
-package io.github.yeeuou.theFinals.commands
+package io.github.yeeuou.theFinalsPlugin.commands
 
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.StringReader
@@ -8,19 +8,17 @@ import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
-import io.github.yeeuou.theFinals.DummyPlayer
-import io.github.yeeuou.theFinals.TeamManager
-import io.github.yeeuou.theFinals.TFTeam
-import io.github.yeeuou.theFinals.TeamManager.tfPlayer
-import io.github.yeeuou.theFinals.TeamManager.unregisterPlayer
+import io.github.yeeuou.theFinalsPlugin.DummyPlayer
+import io.github.yeeuou.theFinalsPlugin.TeamManager
+import io.github.yeeuou.theFinalsPlugin.TFTeam
+import io.github.yeeuou.theFinalsPlugin.TeamManager.tfPlayer
+import io.github.yeeuou.theFinalsPlugin.TeamManager.unregisterPlayer
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes
 import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver
 import org.bukkit.entity.Pillager
 import org.bukkit.entity.Player
-import org.bukkit.entity.Villager
-import org.bukkit.entity.Vindicator
 import java.util.concurrent.CompletableFuture
 
 object JoinTFTeamCommand : AbstractCommand() {

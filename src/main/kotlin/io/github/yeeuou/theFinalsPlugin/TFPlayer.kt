@@ -1,4 +1,4 @@
-package io.github.yeeuou.theFinals
+package io.github.yeeuou.theFinalsPlugin
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -82,19 +82,19 @@ class TFPlayer(
         } else {
             figure.spawn()
             Bukkit.getScheduler().runTaskTimer(
-                TheFinals.instance,
+                TheFinalsPlugin.instance,
                 SpectateOnTeam(),
                 20 * 3, 1
             )
             if (coin > 0) {
                 respawnTime = TFConfig.playerRespawnTick
                 Bukkit.getScheduler().runTaskTimer(
-                    TheFinals.instance,
+                    TheFinalsPlugin.instance,
                     WaitRespawnTime(),
                     0, 1
                 )
             } else Bukkit.getScheduler().runTaskTimer(
-                TheFinals.instance,
+                TheFinalsPlugin.instance,
                 WaitReviveFromTeam(),
                 0, 1
             )
@@ -147,7 +147,7 @@ class TFPlayer(
                     Component.text("리스폰 가능까지: $respawnTime (C): $coin"))
             } else {
                 Bukkit.getScheduler().runTaskTimer(
-                    TheFinals.instance,
+                    TheFinalsPlugin.instance,
                     PressStartTask(),
                     0, 1
                 )
@@ -188,7 +188,7 @@ class TFPlayer(
         figure.remove()
         waitTeamRespawn = true
         Bukkit.getScheduler().runTaskTimer(
-            TheFinals.instance,
+            TheFinalsPlugin.instance,
             WaitTeamRespawn(),
             0, 20
         )

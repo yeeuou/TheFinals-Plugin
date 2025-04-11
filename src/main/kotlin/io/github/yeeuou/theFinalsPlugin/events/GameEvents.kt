@@ -1,13 +1,13 @@
-package io.github.yeeuou.theFinals.events
+package io.github.yeeuou.theFinalsPlugin.events
 
-import io.github.yeeuou.theFinals.DummyFigureRevive
-import io.github.yeeuou.theFinals.DummyPlayer
-import io.github.yeeuou.theFinals.DummyPlayer.Companion.asDummyFigure
-import io.github.yeeuou.theFinals.Figure.Companion.figure
-import io.github.yeeuou.theFinals.TFPlayer.Companion.getSpectatePlayer
-import io.github.yeeuou.theFinals.TeamManager.tfPlayer
-import io.github.yeeuou.theFinals.TheFinals
-import io.github.yeeuou.theFinals.task.ReviveAnimationTask
+import io.github.yeeuou.theFinalsPlugin.DummyFigureRevive
+import io.github.yeeuou.theFinalsPlugin.DummyPlayer
+import io.github.yeeuou.theFinalsPlugin.DummyPlayer.Companion.asDummyFigure
+import io.github.yeeuou.theFinalsPlugin.Figure.Companion.figure
+import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.getSpectatePlayer
+import io.github.yeeuou.theFinalsPlugin.TeamManager.tfPlayer
+import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
+import io.github.yeeuou.theFinalsPlugin.task.ReviveAnimationTask
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.entity.ArmorStand
@@ -47,13 +47,13 @@ class GameEvents : Listener {
     @EventHandler
     fun playerLookAtFigure(ev: PlayerMoveEvent) {
         ev.player.getMetadata("tf_holdRevive")
-            .forEach { if (it.owningPlugin is TheFinals) return }
+            .forEach { if (it.owningPlugin is TheFinalsPlugin) return }
         ev.player.getTargetEntity(3)?.run {
             (this as? ArmorStand)?.figure()?.let {
                 ev.player.setMetadata("tf_holdRevive",
-                    FixedMetadataValue(TheFinals.instance, null))
+                    FixedMetadataValue(TheFinalsPlugin.instance, null))
                 server.scheduler.runTaskTimer(
-                    TheFinals.instance,
+                    TheFinalsPlugin.instance,
                     ReviveAnimationTask(ev.player, it),
                     0L, 1L
                 )
@@ -61,9 +61,9 @@ class GameEvents : Listener {
             (this as? ArmorStand)?.let {
                 it.asDummyFigure()?.run {
                     ev.player.setMetadata("tf_holdRevive",
-                        FixedMetadataValue(TheFinals.instance, null))
+                        FixedMetadataValue(TheFinalsPlugin.instance, null))
                     Bukkit.getScheduler().runTaskTimer(
-                        TheFinals.instance,
+                        TheFinalsPlugin.instance,
                         DummyFigureRevive(ev.player, this),
                         0, 1
                     )

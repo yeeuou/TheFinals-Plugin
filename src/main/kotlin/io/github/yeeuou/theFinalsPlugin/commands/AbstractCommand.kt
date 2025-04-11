@@ -1,4 +1,4 @@
-package io.github.yeeuou.theFinals.commands
+package io.github.yeeuou.theFinalsPlugin.commands
 
 import net.kyori.adventure.text.Component
 

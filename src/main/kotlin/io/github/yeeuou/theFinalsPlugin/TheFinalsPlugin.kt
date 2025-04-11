@@ -1,8 +1,8 @@
-package io.github.yeeuou.theFinals
+package io.github.yeeuou.theFinalsPlugin
 
 import com.mojang.brigadier.Command
-import io.github.yeeuou.theFinals.commands.JoinTFTeamCommand
-import io.github.yeeuou.theFinals.events.GameEvents
+import io.github.yeeuou.theFinalsPlugin.commands.JoinTFTeamCommand
+import io.github.yeeuou.theFinalsPlugin.events.GameEvents
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.kyori.adventure.text.Component
@@ -12,7 +12,7 @@ import org.bukkit.entity.Player
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.plugin.java.JavaPlugin
 
-class TheFinals : JavaPlugin() {
+class TheFinalsPlugin : JavaPlugin() {
     companion object {
         private lateinit var pl: JavaPlugin
         val instance
@@ -40,7 +40,7 @@ class TheFinals : JavaPlugin() {
                         Bukkit.broadcast(Component.text(a))
                         if (!a)
                             setMetadata("test", FixedMetadataValue(
-                                this@TheFinals, null))
+                                this@TheFinalsPlugin, null))
                     }
                 Command.SINGLE_SUCCESS
             }.build())

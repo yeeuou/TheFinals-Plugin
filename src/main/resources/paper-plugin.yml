@@ -1,6 +1,6 @@
-name: TheFinals
+name: TheFinalsPlugin
 version: '$version'
 description: Reach The Finals
 author: yeeuou
-main: io.github.yeeuou.theFinals.TheFinals
+main: io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
 api-version: '1.21'

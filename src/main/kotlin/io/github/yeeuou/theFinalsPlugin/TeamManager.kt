@@ -1,4 +1,4 @@
-package io.github.yeeuou.theFinals
+package io.github.yeeuou.theFinalsPlugin
 
 import org.bukkit.entity.Player
 

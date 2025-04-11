@@ -1,1 +1,1 @@
-rootProject.name = "TheFinals"
+rootProject.name = "TheFinalsPlugin"

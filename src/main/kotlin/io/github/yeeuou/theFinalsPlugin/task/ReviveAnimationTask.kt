@@ -1,8 +1,8 @@
-package io.github.yeeuou.theFinals.task
+package io.github.yeeuou.theFinalsPlugin.task
 
-import io.github.yeeuou.theFinals.Figure
-import io.github.yeeuou.theFinals.Figure.Companion.figure
-import io.github.yeeuou.theFinals.TheFinals
+import io.github.yeeuou.theFinalsPlugin.Figure
+import io.github.yeeuou.theFinalsPlugin.Figure.Companion.figure
+import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
 import io.papermc.paper.util.Tick
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
@@ -25,7 +25,7 @@ class ReviveAnimationTask(
         // 부활 끊기
         val targetedFigure = (player.getTargetEntity(3) as? ArmorStand)?.figure()
         if (targetedFigure == null || targetedFigure != figure) {
-            player.removeMetadata("tf_holdRevive", TheFinals.instance)
+            player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
             task.cancel()
             player.resetTitle()
             return
@@ -50,7 +50,7 @@ class ReviveAnimationTask(
             ))
             if (progress >= reviveMaxProgress) {
                 figure.owner.reviveFromFigure()
-                player.removeMetadata("tf_holdRevive", TheFinals.instance)
+                player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
                 player.resetTitle()
                 task.cancel()
             }
