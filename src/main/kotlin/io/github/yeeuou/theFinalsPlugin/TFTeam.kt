@@ -10,8 +10,18 @@ import org.bukkit.scoreboard.Team
 import java.time.Duration
 
 enum class TFTeam(val color: NamedTextColor) {
-    BLUE(NamedTextColor.BLUE), RED(NamedTextColor.RED),
-    PURPLE(NamedTextColor.DARK_PURPLE), PINK(NamedTextColor.LIGHT_PURPLE);
+    LIVE_WIRES(NamedTextColor.BLUE), RETROS(NamedTextColor.RED),
+    MIGHTY(NamedTextColor.DARK_PURPLE), BOUNDLESS(NamedTextColor.LIGHT_PURPLE),
+    BOGGS(NamedTextColor.GOLD), BIG_SPLASH(NamedTextColor.GREEN),
+    SOCIAL_RIGHTS(NamedTextColor.AQUA), SHOCK_N_OH(NamedTextColor.YELLOW),
+    STEAMROLLER(NamedTextColor.BLACK), OVERDOX(NamedTextColor.GRAY),
+    ULTRA_RARE(NamedTextColor.DARK_GREEN), JET_SETTERS(NamedTextColor.DARK_BLUE),
+    KINGFISH(NamedTextColor.DARK_RED), TOUGH_SHELLS(NamedTextColor.DARK_GRAY),
+    POWER_HOUSE(NamedTextColor.DARK_AQUA), HI_NOTES(NamedTextColor.WHITE);
+    
+    companion object {
+        val teamNames = entries.map { it.name.lowercase() }
+    }
 
     private val players = mutableListOf<TFPlayer>()
 

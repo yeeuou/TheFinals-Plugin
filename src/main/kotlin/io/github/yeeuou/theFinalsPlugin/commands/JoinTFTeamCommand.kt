@@ -78,10 +78,10 @@ class TFTeamArgument : CustomArgumentType<TFTeam, String> {
     override fun <S : Any> listSuggestions(
         context: CommandContext<S>,
         builder: SuggestionsBuilder
-    ): CompletableFuture<Suggestions> {
-        TFTeam.entries.map { it.name }.filter {
-            it.lowercase().startsWith(builder.remainingLowerCase)
-        }.forEach { builder.suggest(it.lowercase()) }
+    ): CompletableFuture<Suggestions> { // TODO 색깔 툴팁 추가
+        TFTeam.teamNames.filter {
+            it.startsWith(builder.remainingLowerCase)
+        }.forEach { builder.suggest(it) }
         return builder.buildFuture()
     }
 
