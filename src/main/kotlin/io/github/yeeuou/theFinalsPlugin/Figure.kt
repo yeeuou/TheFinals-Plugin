@@ -56,8 +56,9 @@ class Figure(
     }
 
     fun remove() {
-        if (!owner.isDead) return
+//        if (!owner.isDead) return
         spawnedFigures.remove(figureEntity)
         figureEntity?.remove()
+        figureEntity = null
     }
 }

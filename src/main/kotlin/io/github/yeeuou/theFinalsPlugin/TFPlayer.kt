@@ -40,18 +40,46 @@ class TFPlayer private constructor (
                 changeTeam(team)
                 return
             }
-            TFPlayer(p, team).let {
-                playerByPlayers[it.player] = it
-                it.tfTeam.addPlayer(it)
-            }
+            TFPlayer(p, team)
         }
 
-        private const val ROOT_KEY = "TFPlayer"
+        val playerDataFolder = File(TheFinalsPlugin.instance.dataFolder, "players")
 
+        private const val KEY_ROOT = "TFPlayer"
+        private const val KEY_TEAM = "tfTeam"
+        private const val KEY_COIN = "coin"
+        private const val KEY_RESPAWN_TIME = "respawnTime"
+        private const val KEY_DEAD = "dead"
+
+        // 플레이어가 관전중인 플레이어 기록
         val spectatorPlayers = mutableMapOf<TFPlayer, TFPlayer>()
         fun TFPlayer.getSpectatePlayer() = spectatorPlayers[this]
 
-        fun load() {}
+        fun tryLoad(player: Player) {
+            val file = File(playerDataFolder, "${player.uniqueId}")
+            if (!file.exists()) return
+
+            val yaml = YamlConfiguration.loadConfiguration(file)
+            val root = requireNotNull(yaml.getConfigurationSection(KEY_ROOT))
+            { "$file: Unknown key $KEY_ROOT" }
+            val teamName = requireNotNull(root.getString(KEY_TEAM))
+            { "$file: Unknown key $KEY_TEAM" }.lowercase()
+            if (teamName !in TFTeam.teamNames)
+                throw IllegalArgumentException("Not found team name: $teamName")
+            val tfTeam = TFTeam.valueOf(teamName.uppercase())
+            val coin = requireNotNull(root.getInt(KEY_COIN))
+            { "$file: Unknown key $KEY_COIN" }
+            val respawnTime = requireNotNull(root.getInt(KEY_RESPAWN_TIME))
+            { "$file: Unknown key $KEY_RESPAWN_TIME" }
+            val dead = requireNotNull(root.getBoolean(KEY_DEAD))
+            { "$file: Unknown key $KEY_DEAD" }
+
+            TFPlayer(player, tfTeam).apply {
+                this.coin = coin
+                this.respawnTime = respawnTime
+                this.isDead = dead
+            }
+        }
     }
 
     var tfTeam = tfTeam
@@ -71,15 +99,15 @@ class TFPlayer private constructor (
 
     private val figure = Figure(this)
 
-//    init {
-//        tfTeam.addPlayer(this)
-//    }
-
-    // 플레이어 스탯 저장(접속시 불러오기, 플레이어가 나갈 때/플러그인 언로드시 저장)
+    init { // 등록
+        playerByPlayers[player] = this
+        tfTeam.addPlayer(this)
+    }
 
     fun unload() {
         save()
         tfTeam.removePlayer(this)
+        playerByPlayers.remove(player)
         if (isDead) {
             figure.remove()
             spectatorPlayers.remove(this)
@@ -87,20 +115,28 @@ class TFPlayer private constructor (
     }
 
     private fun save() {
-        val file = File(
-            TheFinalsPlugin.instance.dataFolder,
-            "players/${player.uniqueId}.yml"
-        ).also { it.parentFile.mkdirs() }
+        val file = File(playerDataFolder, "${player.uniqueId}.yml")
+            .also { it.parentFile.mkdirs() }
         val yaml = YamlConfiguration()
-        yaml.createSection(ROOT_KEY).let {
-            it["coin"] = coin
-            it["respawnTime"] = respawnTime
-            it["tfTeam"] = tfTeam.name
+        yaml.createSection(KEY_ROOT).let {
+            it[KEY_TEAM] = tfTeam.name
+            it[KEY_COIN] = coin
+            it[KEY_RESPAWN_TIME] = respawnTime
+            it[KEY_DEAD] = isDead
         }
         yaml.save(file)
     }
 
-    fun unregister() {}
+    fun unregister() {
+        File(playerDataFolder, "${player.uniqueId}.yml").delete()
+        playerByPlayers.remove(player)
+        tfTeam.removePlayer(this)
+        if (isDead) {
+            figure.remove()
+            spectatorPlayers.remove(this)
+        }
+        isDead = false // remove remaining tasks
+    }
 
     fun addCoin() {
         coin++
@@ -224,6 +260,10 @@ class TFPlayer private constructor (
      */
     private inner class WaitTeamRespawn : Consumer<BukkitTask> {
         override fun accept(task: BukkitTask) {
+            if (!isDead) {
+                task.cancel()
+                return
+            }
             if (respawnTime > 0) {
                 player.sendActionBar(
                     Component.text("팀 리스폰까지: $respawnTime"))
