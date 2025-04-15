@@ -123,6 +123,11 @@ class GameEvents : Listener {
 
     @EventHandler
     fun playerGetAdvancement(ev: PlayerAdvancementDoneEvent) {
+        // check root advancement
+        if (ev.advancement.parent == null
+            // check recipe advancement
+            || ev.advancement.key.key.startsWith("recipes"))
+            return
         ev.player.tfPlayer()?.addCoin()
     }
 

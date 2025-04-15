@@ -56,7 +56,7 @@ class TFPlayer private constructor (
         fun TFPlayer.getSpectatePlayer() = spectatorPlayers[this]
 
         fun tryLoad(player: Player) {
-            val file = File(playerDataFolder, "${player.uniqueId}")
+            val file = File(playerDataFolder, "${player.uniqueId}.yml")
             if (!file.exists()) return
 
             val yaml = YamlConfiguration.loadConfiguration(file)
@@ -67,12 +67,11 @@ class TFPlayer private constructor (
             if (teamName !in TFTeam.teamNames)
                 throw IllegalArgumentException("Not found team name: $teamName")
             val tfTeam = TFTeam.valueOf(teamName.uppercase())
-            val coin = requireNotNull(root.getInt(KEY_COIN))
-            { "$file: Unknown key $KEY_COIN" }
-            val respawnTime = requireNotNull(root.getInt(KEY_RESPAWN_TIME))
-            { "$file: Unknown key $KEY_RESPAWN_TIME" }
-            val dead = requireNotNull(root.getBoolean(KEY_DEAD))
-            { "$file: Unknown key $KEY_DEAD" }
+            val coin = root.getInt(KEY_COIN, TFConfig.startCoin)
+            val respawnTime = root.getInt(KEY_RESPAWN_TIME)
+            val dead =
+                if (root.isBoolean(KEY_DEAD)) root.getBoolean(KEY_DEAD)
+                else throw IllegalArgumentException("$file: Unknown key $KEY_DEAD")
 
             TFPlayer(player, tfTeam).apply {
                 this.coin = coin
@@ -131,6 +130,7 @@ class TFPlayer private constructor (
         File(playerDataFolder, "${player.uniqueId}.yml").delete()
         playerByPlayers.remove(player)
         tfTeam.removePlayer(this)
+        tfTeam.team.removePlayer(player)
         if (isDead) {
             figure.remove()
             spectatorPlayers.remove(this)

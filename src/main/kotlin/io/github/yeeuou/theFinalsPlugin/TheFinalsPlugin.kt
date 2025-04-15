@@ -33,8 +33,8 @@ class TheFinalsPlugin : JavaPlugin() {
         }
         server.pluginManager.registerEvents(GameEvents(), this)
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
-            it.registrar().register(JoinTFTeamCommand.joinCmd)
-            it.registrar().register(JoinTFTeamCommand.ejectCmd)
+            it.registrar().register(JoinTFTeamCommand.joinCmd, "팀에 자신(또는 다른 사람)을 등록해 보세요!")
+            it.registrar().register(JoinTFTeamCommand.ejectCmd, "팀이 마음에 들지 않는다면 떠나보세요!")
             // TESTING ONLY
             it.registrar().register(JoinTFTeamCommand.testCmd)
             it.registrar().register(ColorTest.cmd)
