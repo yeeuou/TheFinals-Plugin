@@ -13,6 +13,7 @@ import org.bukkit.Sound
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
+import org.bukkit.scoreboard.Team
 import java.io.File
 import java.time.Duration
 import java.util.function.Consumer
@@ -77,6 +78,7 @@ class TFPlayer private constructor (
                 this.coin = coin
                 this.respawnTime = respawnTime
                 this.isDead = dead
+                initializeOnLoaded()
             }
         }
     }
@@ -101,6 +103,24 @@ class TFPlayer private constructor (
     init { // 등록
         playerByPlayers[player] = this
         tfTeam.addPlayer(this)
+    }
+
+    // 로드시 죽은 상태등을 처리
+    fun initializeOnLoaded() {
+        if (isDead) {
+            if (coin <= 0)
+                Bukkit.getScheduler().runTaskTimer(
+                    TheFinalsPlugin.instance,
+                    WaitReviveFromTeam(),
+                    0, 1
+                )
+            else
+                Bukkit.getScheduler().runTaskTimer(
+                    TheFinalsPlugin.instance,
+                    DiedOnLoad(),
+                    0, 20
+                )
+        }
     }
 
     fun unload() {
@@ -130,7 +150,6 @@ class TFPlayer private constructor (
         File(playerDataFolder, "${player.uniqueId}.yml").delete()
         playerByPlayers.remove(player)
         tfTeam.removePlayer(this)
-        tfTeam.team.removePlayer(player)
         if (isDead) {
             figure.remove()
             spectatorPlayers.remove(this)
@@ -150,7 +169,7 @@ class TFPlayer private constructor (
 
     fun playDeadEffect() {
         player.gameMode = GameMode.SPECTATOR
-        player.spawnParticle(
+        player.world.spawnParticle(
             Particle.BLOCK,
             player.location.add(0.0 ,1.0, 0.0),
             250,
@@ -205,10 +224,20 @@ class TFPlayer private constructor (
     }
 
     fun reviveFromFigure() {
+        if (!isDead) return // if late respawn
         val loc = requireNotNull(figure.figureLoc) { "No revive without figure!" }
         figure.remove()
         isDead = false
         playerRespawnProcess(loc)
+    }
+
+    fun lateRespawn() {
+        isDead = false
+        Bukkit.getScheduler().runTaskLater(
+            TheFinalsPlugin.instance,
+            { -> respawn(true) },
+            10
+        )
     }
 
     private fun playerRespawnProcess(loc: Location) {
@@ -279,11 +308,22 @@ class TFPlayer private constructor (
     fun startTeamRespawnTask() {
         figure.remove()
         waitTeamRespawn = true
+        respawnTime = TFConfig.teamRespawnTick - 10
         Bukkit.getScheduler().runTaskTimer(
             TheFinalsPlugin.instance,
             WaitTeamRespawn(),
             0, 20
         )
+    }
+
+    /** 초마다 업데이트 */
+    private inner class DiedOnLoad : Consumer<BukkitTask> {
+        override fun accept(task: BukkitTask) {
+            if (--respawnTime <= 0) {
+                respawn(false)
+                task.cancel()
+            } else player.sendActionBar(Component.text("부활까지: $respawnTime"))
+        }
     }
 
     private inner class PressStartTask : Consumer<BukkitTask> {
@@ -299,17 +339,17 @@ class TFPlayer private constructor (
                 task.cancel()
                 return
             }
-            if (tick++ % 10 != 0) return
+            if (tick++ % 3 != 0) return
             player.showTitle(Title.title(
                 Component.text(""),
-                Component.text("SNEAK START")
+                Component.text("PRESS START")
                     .decorate(TextDecoration.BOLD).color(rainbowColors[colorIndex++]),
                 Title.Times.times(Duration.ZERO, Duration.ofSeconds(1), Duration.ZERO)
             ))
             player.sendActionBar(
                 Component.text()
                     .append(
-                        Component.text("(웅크리기로 부활) ")
+                        Component.text("[웅크리기로 부활] ")
                             .decorate(TextDecoration.ITALIC).color(NamedTextColor.GRAY)
                     ).append(Component.text("크레딧 $coin"))
             )

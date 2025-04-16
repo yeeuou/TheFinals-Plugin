@@ -79,9 +79,12 @@ class TFTeamArgument : CustomArgumentType<TFTeam, String> {
         context: CommandContext<S>,
         builder: SuggestionsBuilder
     ): CompletableFuture<Suggestions> { // TODO 색깔 툴팁 추가
-        TFTeam.teamNames.filter {
-            it.startsWith(builder.remainingLowerCase)
-        }.forEach { builder.suggest(it) }
+        TFTeam.nameByTeam.filter {
+            it.key.startsWith(builder.remainingLowerCase)
+        }.forEach { builder.suggest(it.key) { it.value.color.examinableName() } }
+//        TFTeam.teamNames.filter {
+//            it.startsWith(builder.remainingLowerCase)
+//        }.forEach { builder.suggest(it) }
         return builder.buildFuture()
     }
 

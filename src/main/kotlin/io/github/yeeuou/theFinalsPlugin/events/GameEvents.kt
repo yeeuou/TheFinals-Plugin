@@ -1,5 +1,6 @@
 package io.github.yeeuou.theFinalsPlugin.events
 
+import com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent
 import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent
 import io.github.yeeuou.theFinalsPlugin.DummyFigureRevive
 import io.github.yeeuou.theFinalsPlugin.DummyPlayer
@@ -54,6 +55,7 @@ class GameEvents : Listener {
     fun playerLookAtFigure(ev: PlayerMoveEvent) {
         ev.player.getMetadata("tf_holdRevive")
             .forEach { if (it.owningPlugin is TheFinalsPlugin) return }
+        // TODO 같은 팀인지 확인 및 자기 자신에게는 비활성화
         ev.player.getTargetEntity(3)?.run {
             (this as? ArmorStand)?.figure()?.let {
                 ev.player.setMetadata("tf_holdRevive",
@@ -109,15 +111,24 @@ class GameEvents : Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
+    fun enterSpector(ev: PlayerStartSpectatingEntityEvent) {
+        ev.player.tfPlayer()?.run {
+            if (ev.newSpectatorTarget !is Player) {
+                ev.isCancelled = true
+                return
+            }
+            val p = ev.newSpectatorTarget as Player
+            if (p.tfPlayer()?.tfTeam != tfTeam)
+                ev.isCancelled = true
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
     fun exitSpector(ev: PlayerStopSpectatingEntityEvent) {
         ev.player.tfPlayer()?.run {
-            if (canRespawn)
-                Bukkit.getScheduler().runTaskLater( // TODO 중복실행 가능한지 검사
-                    TheFinalsPlugin.instance,
-                    { -> respawn(true) },
-                    10
-                )
-            ev.isCancelled = true
+            if (canRespawn && isDead) lateRespawn()
+            if (this in TFPlayer.spectatorPlayers)
+                ev.isCancelled = true
         }
     }
 

@@ -7,6 +7,7 @@ import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.inventory.meta.SkullMeta
+import org.bukkit.scoreboard.Team
 
 class Figure(
     val owner: TFPlayer
@@ -25,7 +26,7 @@ class Figure(
         if (!owner.isDead) return
         val color = Color.fromRGB(owner.tfTeam.color.value())
         figureEntity = owner.player.run {
-            world.spawn(location, ArmorStand::class.java) {
+            world.spawn(location.setRotation(0f, pitch), ArmorStand::class.java) {
                 it.isSmall = true
                 it.isInvulnerable = true
                 it.setDisabledSlots(
@@ -53,6 +54,7 @@ class Figure(
             }
         }
         spawnedFigures[figureEntity!!] = this
+        owner.tfTeam.addFigure(figureEntity!!)
     }
 
     fun remove() {

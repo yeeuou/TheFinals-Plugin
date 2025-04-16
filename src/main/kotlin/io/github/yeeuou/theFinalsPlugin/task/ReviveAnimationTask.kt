@@ -3,12 +3,17 @@ package io.github.yeeuou.theFinalsPlugin.task
 import io.github.yeeuou.theFinalsPlugin.Figure
 import io.github.yeeuou.theFinalsPlugin.Figure.Companion.figure
 import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
+import io.github.yeeuou.theFinalsPlugin.events.GameEvents
 import io.papermc.paper.util.Tick
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
+import org.bukkit.NamespacedKey
+import org.bukkit.attribute.Attribute
+import org.bukkit.attribute.AttributeModifier
 import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
+import org.bukkit.util.Vector
 import java.time.Duration
 import java.util.function.Consumer
 
@@ -16,6 +21,11 @@ class ReviveAnimationTask(
     private val player: Player,
     private val figure: Figure
 ) : Consumer<BukkitTask> {
+    private companion object {
+        val key = NamespacedKey(TheFinalsPlugin.instance, "multiple_0")
+        val multiplyZeroModifier = AttributeModifier(key, 0.0,
+            AttributeModifier.Operation.MULTIPLY_SCALAR_1)
+    }
     private var progress = 0
     private val reviveMaxProgress = 100
     private val noFadeInOut =
@@ -32,6 +42,8 @@ class ReviveAnimationTask(
         }
         if (!player.isSneaking) {
             if (progress > 0) progress = 0 // 초기화 효과 추가
+            player.getAttribute(Attribute.MOVEMENT_SPEED)?.removeModifier(key)
+            player.getAttribute(Attribute.JUMP_STRENGTH)?.removeModifier(key)
             player.showTitle(Title.title(
                 Component.text(""),
                 Component.text("[길게 웅크려서 부활]"),
@@ -39,13 +51,24 @@ class ReviveAnimationTask(
             ))
         } else {
             // TODO 부활중 움직일 수 없도록
+            player.getAttribute(Attribute.MOVEMENT_SPEED)?.run{
+                player.sendActionBar(Component.text("modifiers: $modifiers, v: $value"))
+                if (multiplyZeroModifier !in modifiers) addModifier(multiplyZeroModifier)
+            }
+            player.getAttribute(Attribute.JUMP_STRENGTH)?.run{
+                if (multiplyZeroModifier !in modifiers) addModifier(multiplyZeroModifier)
+            }
             val sb = StringBuilder("[")
             for (i in 1..20)
                 // 진행 바가 끝까지 도달하게 함
-                if (i * 5 <= progress + 1) sb.append('=')
-                else sb.append(' ')
+                if (i * 5 <= progress + 1) sb.append('#')
+                else sb.append('-')
             player.showTitle(Title.title(
                 Component.text(""), Component.text("$sb]"),
+                noFadeInOut
+            ))
+            figure.owner.player.showTitle(Title.title(
+                Component.text("부활중"), Component.text("$sb]"),
                 noFadeInOut
             ))
             if (progress >= reviveMaxProgress) {

@@ -6,10 +6,11 @@ import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
 import org.bukkit.Bukkit
+import org.bukkit.entity.ArmorStand
 import org.bukkit.scoreboard.Team
 import java.time.Duration
 
-enum class TFTeam(val color: NamedTextColor) {
+enum class TFTeam(color: NamedTextColor) {
     LIVE_WIRES(NamedTextColor.BLUE), RETROS(NamedTextColor.RED),
     MIGHTY(NamedTextColor.DARK_PURPLE), BOUNDLESS(NamedTextColor.LIGHT_PURPLE),
     BOGGS(NamedTextColor.GOLD), BIG_SPLASH(NamedTextColor.GREEN),
@@ -21,9 +22,20 @@ enum class TFTeam(val color: NamedTextColor) {
     
     companion object {
         val teamNames = entries.map { it.name.lowercase() }
+        val nameByTeam = buildMap {
+            TFTeam.entries.forEach {
+                set(it.name.lowercase(), it)
+            }
+        }
     }
 
     private val players = mutableListOf<TFPlayer>()
+
+    var color = color
+        private set(c) {
+            team.color(c)
+            field = c
+        }
 
     fun isAllPlayerDead(): Boolean { // 오프라인인 플레이어가 리스트에 없도록 처리
         players.filter { it.player.isOnline }.forEach {
@@ -92,13 +104,24 @@ enum class TFTeam(val color: NamedTextColor) {
         }
     }
 
-    val team: Team
+    fun swapColor(o: TFTeam) {
+        val t = o.color
+        o.color = color
+        color = t
+    }
+
+    fun addFigure(e: ArmorStand) {
+        team.addEntity(e)
+    }
+
+    private val team: Team
         get() = Bukkit.getScoreboardManager().mainScoreboard.run {
-            getTeam("TF_$color") ?:
-            registerNewTeam("TF_$color").apply {
+            getTeam("TF_$name") ?:
+            registerNewTeam("TF_$name").apply {
                 color(this@TFTeam.color)
                 setCanSeeFriendlyInvisibles(true)
                 setAllowFriendlyFire(false)
+                setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.FOR_OWN_TEAM)
             }
         }
 }
