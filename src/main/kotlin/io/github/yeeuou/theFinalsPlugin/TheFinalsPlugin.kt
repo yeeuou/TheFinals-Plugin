@@ -1,23 +1,15 @@
 package io.github.yeeuou.theFinalsPlugin
 
-import com.mojang.brigadier.Command
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
+import io.github.yeeuou.theFinalsPlugin.commands.ChangeTFTeamColor
 import io.github.yeeuou.theFinalsPlugin.commands.ColorTest
 import io.github.yeeuou.theFinalsPlugin.commands.JoinTFTeamCommand
 import io.github.yeeuou.theFinalsPlugin.events.GameEvents
-import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.GameRule
-import org.bukkit.entity.Pillager
-import org.bukkit.entity.Player
-import org.bukkit.entity.Villager
-import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.plugin.java.JavaPlugin
-import org.bukkit.potion.PotionEffect
-import org.bukkit.potion.PotionEffectType
 
 class TheFinalsPlugin : JavaPlugin() {
     companion object {
@@ -36,13 +28,18 @@ class TheFinalsPlugin : JavaPlugin() {
             it.setGameRule(GameRule.KEEP_INVENTORY, true)
         }
         Bukkit.getOnlinePlayers().forEach(TFPlayer::tryLoad)
+        TFTeam.loadColor()
 //        val t = server.scoreboardManager.mainScoreboard.run {
 //            getTeam("TEST") ?: registerNewTeam("TEST")
 //        }.apply { setCanSeeFriendlyInvisibles(true) }
         server.pluginManager.registerEvents(GameEvents(), this)
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
-            it.registrar().register(JoinTFTeamCommand.joinCmd, "팀에 자신(또는 다른 사람)을 등록해 보세요!")
-            it.registrar().register(JoinTFTeamCommand.ejectCmd, "팀이 마음에 들지 않는다면 떠나보세요!")
+            it.registrar().register(JoinTFTeamCommand.joinCmd,
+                "팀에 자신(또는 다른 사람)을 등록해 보세요!")
+            it.registrar().register(JoinTFTeamCommand.ejectCmd,
+                "팀이 마음에 들지 않는다면 떠나보세요!")
+            it.registrar().register(ChangeTFTeamColor.cmd,
+                "팀의 색을 바꿉니다. 색을 바꾸면 바꿀 색을 가진 팀의 색상과 교체됩니다.")
             // TESTING ONLY
             it.registrar().register(JoinTFTeamCommand.testCmd)
             it.registrar().register(ColorTest.cmd)

@@ -6,8 +6,10 @@ import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
 import org.bukkit.Bukkit
+import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.ArmorStand
 import org.bukkit.scoreboard.Team
+import java.io.File
 import java.time.Duration
 
 enum class TFTeam(color: NamedTextColor) {
@@ -21,11 +23,54 @@ enum class TFTeam(color: NamedTextColor) {
     POWER_HOUSE(NamedTextColor.DARK_AQUA), HI_NOTES(NamedTextColor.WHITE);
     
     companion object {
-        val teamNames = entries.map { it.name.lowercase() }
         val nameByTeam = buildMap {
             TFTeam.entries.forEach {
                 set(it.name.lowercase(), it)
             }
+        }
+        private val colorDefFile =
+            File(TheFinalsPlugin.instance.dataFolder, "teamColor.yml")
+        private const val KEY_ROOT = "TFTeamColor"
+        fun loadColor() {
+            if (!colorDefFile.exists()) {
+                saveColor()
+                return
+            }
+            val config = YamlConfiguration.loadConfiguration(colorDefFile)
+            val root = config.getConfigurationSection(KEY_ROOT)
+            if (root == null) {
+                TheFinalsPlugin.instance.logger
+                    .warning("'teamColor.yml' has unknown key $KEY_ROOT. ignored it.")
+                return
+            }
+            val unsolvedTeams = mutableListOf<TFTeam>()
+            val colorList = entries.map { it.color }.toMutableList()
+            for ((k, v) in nameByTeam) {
+                val s = root.getString(k)
+                if (s == null) {
+                    unsolvedTeams.add(v); continue
+                }
+                // disallow color overlap
+                val c = colorList.firstOrNull { it.toString() == s }
+                if (c == null) {
+                    unsolvedTeams.add(v); continue
+                }
+                v.color = c
+                colorList.remove(c)
+            }
+            // handling when config file has an error
+            if (unsolvedTeams.isNotEmpty()) (unsolvedTeams zip colorList).forEach {
+                it.first.color = it.second
+            }
+            saveColor()
+        }
+        private fun saveColor() {
+            colorDefFile.apply { parentFile.mkdirs() }
+            val yaml = YamlConfiguration()
+            yaml.createSection(KEY_ROOT).run {
+                entries.forEach { set(it.name.lowercase(), "${it.color}") }
+            }
+            yaml.save(colorDefFile)
         }
     }
 
@@ -104,13 +149,14 @@ enum class TFTeam(color: NamedTextColor) {
         }
     }
 
-    fun swapColor(o: TFTeam) {
-        val t = o.color
-        o.color = color
-        color = t
+    fun swapColor(newColor: NamedTextColor) {
+        if (newColor == color) return
+        entries.first { it.color == newColor }.color = color
+        color = newColor
+        saveColor()
     }
 
-    fun addFigure(e: ArmorStand) {
+    fun addFigure(e: ArmorStand) { // 생성된 피규어의 색이 바뀌게?
         team.addEntity(e)
     }
 
@@ -118,10 +164,11 @@ enum class TFTeam(color: NamedTextColor) {
         get() = Bukkit.getScoreboardManager().mainScoreboard.run {
             getTeam("TF_$name") ?:
             registerNewTeam("TF_$name").apply {
-                color(this@TFTeam.color)
+//                color(this@TFTeam.color)
                 setCanSeeFriendlyInvisibles(true)
                 setAllowFriendlyFire(false)
                 setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.FOR_OWN_TEAM)
+                setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OWN_TEAM)
             }
         }
 }

@@ -11,6 +11,7 @@ import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.getSpectatePlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
 import io.github.yeeuou.theFinalsPlugin.task.ReviveAnimationTask
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.entity.ArmorStand
@@ -55,17 +56,21 @@ class GameEvents : Listener {
     fun playerLookAtFigure(ev: PlayerMoveEvent) {
         ev.player.getMetadata("tf_holdRevive")
             .forEach { if (it.owningPlugin is TheFinalsPlugin) return }
-        // TODO 같은 팀인지 확인 및 자기 자신에게는 비활성화
-        ev.player.getTargetEntity(3)?.run {
-            (this as? ArmorStand)?.figure()?.let {
-                ev.player.setMetadata("tf_holdRevive",
+        ev.player.tfPlayer()?.run {
+            val targetEntity = player.getTargetEntity(3) ?: return
+            if (targetEntity is ArmorStand) targetEntity.figure()?.let {
+                // is self & check team
+                if (it.owner != this && it.owner.tfTeam != this.tfTeam) return
+                player.setMetadata("tf_holdRevive",
                     FixedMetadataValue(TheFinalsPlugin.instance, null))
-                server.scheduler.runTaskTimer(
+                Bukkit.getServer().scheduler.runTaskTimer(
                     TheFinalsPlugin.instance,
-                    ReviveAnimationTask(ev.player, it),
+                    ReviveAnimationTask(player, it),
                     0L, 1L
                 )
             }
+        }
+        ev.player.getTargetEntity(3)?.run {
             (this as? ArmorStand)?.let {
                 it.asDummyFigure()?.run {
                     ev.player.setMetadata("tf_holdRevive",

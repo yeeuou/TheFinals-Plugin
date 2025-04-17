@@ -26,7 +26,7 @@ class Figure(
         if (!owner.isDead) return
         val color = Color.fromRGB(owner.tfTeam.color.value())
         figureEntity = owner.player.run {
-            world.spawn(location.setRotation(0f, pitch), ArmorStand::class.java) {
+            world.spawn(location.setRotation(yaw, 0f), ArmorStand::class.java) {
                 it.isSmall = true
                 it.isInvulnerable = true
                 it.setDisabledSlots(

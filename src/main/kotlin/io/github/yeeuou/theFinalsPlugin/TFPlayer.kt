@@ -65,9 +65,8 @@ class TFPlayer private constructor (
             { "$file: Unknown key $KEY_ROOT" }
             val teamName = requireNotNull(root.getString(KEY_TEAM))
             { "$file: Unknown key $KEY_TEAM" }.lowercase()
-            if (teamName !in TFTeam.teamNames)
-                throw IllegalArgumentException("Not found team name: $teamName")
-            val tfTeam = TFTeam.valueOf(teamName.uppercase())
+            val tfTeam = TFTeam.nameByTeam[teamName]
+                ?: throw IllegalArgumentException("Not found team name: $teamName")
             val coin = root.getInt(KEY_COIN, TFConfig.startCoin)
             val respawnTime = root.getInt(KEY_RESPAWN_TIME)
             val dead =
@@ -241,6 +240,7 @@ class TFPlayer private constructor (
     }
 
     private fun playerRespawnProcess(loc: Location) {
+        player.spectatorTarget = null
         player.gameMode = GameMode.SURVIVAL
         player.teleport(loc)
         player.noDamageTicks = 20 * 2
@@ -248,6 +248,7 @@ class TFPlayer private constructor (
         player.saturation = 5f
         player.arrowsInBody = 0
         spectatorPlayers.remove(this)
+        Bukkit.getServer().logger.info("$spectatorPlayers")
     }
 
     private inner class WaitRespawnTime : Consumer<BukkitTask> {
@@ -362,6 +363,7 @@ class TFPlayer private constructor (
                 task.cancel()
                 return
             }
+            player.sendActionBar(Component.text("flag"))
             if (getSpectatePlayer() == null)
                 spectatorPlayers[this@TFPlayer] = tfTeam.getFirstAlivePlayer()
             if (player.spectatorTarget == null)

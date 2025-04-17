@@ -23,7 +23,7 @@ class ReviveAnimationTask(
 ) : Consumer<BukkitTask> {
     private companion object {
         val key = NamespacedKey(TheFinalsPlugin.instance, "multiple_0")
-        val multiplyZeroModifier = AttributeModifier(key, 0.0,
+        val multiplyZeroModifier = AttributeModifier(key, -1.0,
             AttributeModifier.Operation.MULTIPLY_SCALAR_1)
     }
     private var progress = 0
@@ -36,6 +36,8 @@ class ReviveAnimationTask(
         val targetedFigure = (player.getTargetEntity(3) as? ArmorStand)?.figure()
         if (targetedFigure == null || targetedFigure != figure) {
             player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
+            player.getAttribute(Attribute.MOVEMENT_SPEED)?.removeModifier(key)
+            player.getAttribute(Attribute.JUMP_STRENGTH)?.removeModifier(key)
             task.cancel()
             player.resetTitle()
             return
@@ -50,9 +52,7 @@ class ReviveAnimationTask(
                 noFadeInOut
             ))
         } else {
-            // TODO 부활중 움직일 수 없도록
             player.getAttribute(Attribute.MOVEMENT_SPEED)?.run{
-                player.sendActionBar(Component.text("modifiers: $modifiers, v: $value"))
                 if (multiplyZeroModifier !in modifiers) addModifier(multiplyZeroModifier)
             }
             player.getAttribute(Attribute.JUMP_STRENGTH)?.run{
@@ -74,6 +74,8 @@ class ReviveAnimationTask(
             if (progress >= reviveMaxProgress) {
                 figure.owner.reviveFromFigure()
                 player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
+                player.getAttribute(Attribute.MOVEMENT_SPEED)?.removeModifier(key)
+                player.getAttribute(Attribute.JUMP_STRENGTH)?.removeModifier(key)
                 player.resetTitle()
                 task.cancel()
             }
