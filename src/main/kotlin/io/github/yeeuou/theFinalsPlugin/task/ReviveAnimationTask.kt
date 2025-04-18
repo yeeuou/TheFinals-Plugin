@@ -16,6 +16,7 @@ import org.bukkit.scheduler.BukkitTask
 import org.bukkit.util.Vector
 import java.time.Duration
 import java.util.function.Consumer
+import kotlin.math.round
 
 class ReviveAnimationTask(
     private val player: Player,
@@ -59,18 +60,18 @@ class ReviveAnimationTask(
                 if (multiplyZeroModifier !in modifiers) addModifier(multiplyZeroModifier)
             }
             val sb = StringBuilder("[")
-            for (i in 1..20)
-                // 진행 바가 끝까지 도달하게 함
-                if (i * 5 <= progress + 1) sb.append('#')
-                else sb.append('-')
+            val step = round(progress / 100.0 * 15).toInt()
+            for (i in 1..15)
+                if (i <= step) sb.append('=')
+                else sb.append(' ')
             player.showTitle(Title.title(
                 Component.text(""), Component.text("$sb]"),
                 noFadeInOut
             ))
-            figure.owner.player.showTitle(Title.title(
-                Component.text("부활중"), Component.text("$sb]"),
-                noFadeInOut
-            ))
+//            figure.owner.player.showTitle(Title.title(
+//                Component.text("부활중"), Component.text("$sb]"),
+//                noFadeInOut
+//            ))
             if (progress >= reviveMaxProgress) {
                 figure.owner.reviveFromFigure()
                 player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)

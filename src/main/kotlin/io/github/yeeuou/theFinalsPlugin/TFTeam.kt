@@ -82,8 +82,8 @@ enum class TFTeam(color: NamedTextColor) {
             field = c
         }
 
-    fun isAllPlayerDead(): Boolean { // 오프라인인 플레이어가 리스트에 없도록 처리
-        players.filter { it.player.isOnline }.forEach {
+    fun isAllPlayerDead(): Boolean {
+        players.forEach {
             if (!it.isDead) return false
         }
         return true
@@ -126,7 +126,7 @@ enum class TFTeam(color: NamedTextColor) {
         ?: throw IllegalStateException("This team is wiped.")
 
     fun playTeamWipeEffect() {
-        players.filter { it.player.isOnline }.forEach {
+        players.forEach {
             it.player.run {
                 showTitle(
                     Title.title(
@@ -156,9 +156,9 @@ enum class TFTeam(color: NamedTextColor) {
         saveColor()
     }
 
-    fun addFigure(e: ArmorStand) { // 생성된 피규어의 색이 바뀌게?
-        team.addEntity(e)
-    }
+//    fun addFigure(e: ArmorStand) { // 생성된 피규어의 색이 바뀌게?
+//        team.addEntity(e)
+//    }
 
     private val team: Team
         get() = Bukkit.getScoreboardManager().mainScoreboard.run {
@@ -168,7 +168,7 @@ enum class TFTeam(color: NamedTextColor) {
                 setCanSeeFriendlyInvisibles(true)
                 setAllowFriendlyFire(false)
                 setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.FOR_OWN_TEAM)
-                setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OWN_TEAM)
+                setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OTHER_TEAMS)
             }
         }
 }

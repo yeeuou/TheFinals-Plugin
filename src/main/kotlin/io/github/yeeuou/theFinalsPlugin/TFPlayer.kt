@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
+import org.bukkit.EntityEffect
 import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
@@ -75,7 +76,7 @@ class TFPlayer private constructor (
 
             TFPlayer(player, tfTeam).apply {
                 this.coin = coin
-                this.respawnTime = respawnTime
+                this.respawnTime = if (respawnTime > 10) respawnTime else 10
                 this.isDead = dead
                 initializeOnLoaded()
             }
@@ -95,7 +96,8 @@ class TFPlayer private constructor (
     var isDead = false
         private set
 
-    private var waitTeamRespawn = false
+    var waitTeamRespawn = false
+        private set
 
     private val figure = Figure(this)
 
@@ -156,8 +158,8 @@ class TFPlayer private constructor (
         isDead = false // remove remaining tasks
     }
 
-    fun addCoin() {
-        coin++
+    fun addCoin(add: Int = 1) {
+        coin += add
     }
 
     fun changeTeam(to: TFTeam) {
@@ -182,10 +184,9 @@ class TFPlayer private constructor (
             .5f, .8f
         )
         isDead = true
-        if (tfTeam.isAllPlayerDead()) {
-            respawnTime = TFConfig.teamRespawnTick - 10
+        if (tfTeam.isAllPlayerDead())
             tfTeam.playTeamWipeEffect()
-        } else {
+        else {
             figure.spawn()
             Bukkit.getScheduler().runTaskTimer(
                 TheFinalsPlugin.instance,
@@ -193,7 +194,7 @@ class TFPlayer private constructor (
                 20 * 3, 1
             )
             if (coin > 0) {
-                respawnTime = TFConfig.playerRespawnTick
+                respawnTime = TFConfig.playerRespawnTick - 20
                 Bukkit.getScheduler().runTaskTimer(
                     TheFinalsPlugin.instance,
                     WaitRespawnTime(),
@@ -240,15 +241,16 @@ class TFPlayer private constructor (
     }
 
     private fun playerRespawnProcess(loc: Location) {
+        spectatorPlayers.remove(this)
         player.spectatorTarget = null
         player.gameMode = GameMode.SURVIVAL
         player.teleport(loc)
+        player.spawnParticle(Particle.TOTEM_OF_UNDYING, loc, 400)
         player.noDamageTicks = 20 * 2
         player.foodLevel = 20
         player.saturation = 5f
         player.arrowsInBody = 0
-        spectatorPlayers.remove(this)
-        Bukkit.getServer().logger.info("$spectatorPlayers")
+        player.beeStingersInBody = 0
     }
 
     private inner class WaitRespawnTime : Consumer<BukkitTask> {
@@ -259,11 +261,11 @@ class TFPlayer private constructor (
                 return
             }
             if (tick++ % 20 != 0) return
-            if (respawnTime > 0) {
-                respawnTime--
+            if (respawnTime > 0)
                 player.sendActionBar(
-                    Component.text("리스폰 가능까지: $respawnTime (C): $coin"))
-            } else {
+                    Component.text("리스폰 가능까지: ${respawnTime--} (C): $coin")
+                )
+            else {
                 Bukkit.getScheduler().runTaskTimer(
                     TheFinalsPlugin.instance,
                     PressStartTask(),
@@ -285,20 +287,17 @@ class TFPlayer private constructor (
         }
     }
 
-    /**
-     * 매 초마다 업데이트
-     */
+    /** 매 초마다 업데이트 */
     private inner class WaitTeamRespawn : Consumer<BukkitTask> {
         override fun accept(task: BukkitTask) {
             if (!isDead) {
                 task.cancel()
                 return
             }
-            if (respawnTime > 0) {
+            if (respawnTime > 0)
                 player.sendActionBar(
-                    Component.text("팀 리스폰까지: $respawnTime"))
-                respawnTime--
-            } else {
+                    Component.text("팀 리스폰까지: ${respawnTime--}"))
+            else {
                 waitTeamRespawn = false
                 respawn(false)
                 player.sendActionBar(Component.text())
@@ -307,9 +306,11 @@ class TFPlayer private constructor (
         }
     }
     fun startTeamRespawnTask() {
-        figure.remove()
+        respawnTime = TFConfig.teamRespawnTick - 5
         waitTeamRespawn = true
-        respawnTime = TFConfig.teamRespawnTick - 10
+        spectatorPlayers.remove(this)
+        player.spectatorTarget = null
+        figure.remove()
         Bukkit.getScheduler().runTaskTimer(
             TheFinalsPlugin.instance,
             WaitTeamRespawn(),
@@ -320,10 +321,12 @@ class TFPlayer private constructor (
     /** 초마다 업데이트 */
     private inner class DiedOnLoad : Consumer<BukkitTask> {
         override fun accept(task: BukkitTask) {
-            if (--respawnTime <= 0) {
+            if (respawnTime > 0)
+                player.sendActionBar(Component.text("부활까지: ${respawnTime--}"))
+            else {
                 respawn(false)
                 task.cancel()
-            } else player.sendActionBar(Component.text("부활까지: $respawnTime"))
+            }
         }
     }
 
@@ -336,7 +339,10 @@ class TFPlayer private constructor (
 
         override fun accept(task: BukkitTask) {
             if (!isDead || waitTeamRespawn) {
-                player.resetTitle()
+                if (!waitTeamRespawn) { // 팀 전멸 타이틀을 지우지 않도록 처리
+                    player.resetTitle()
+                    player.sendActionBar(Component.text())
+                }
                 task.cancel()
                 return
             }
@@ -363,7 +369,6 @@ class TFPlayer private constructor (
                 task.cancel()
                 return
             }
-            player.sendActionBar(Component.text("flag"))
             if (getSpectatePlayer() == null)
                 spectatorPlayers[this@TFPlayer] = tfTeam.getFirstAlivePlayer()
             if (player.spectatorTarget == null)

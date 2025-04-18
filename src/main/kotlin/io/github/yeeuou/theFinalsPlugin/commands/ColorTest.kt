@@ -21,22 +21,21 @@ object ColorTest {
                     world.spawn(
                         location.add(posAddX, 0.0, 0.0)
                             .setRotation(0f, 0f),
-                        Pillager::class.java,
-                        { pillager ->
-                            pillager.equipment.setItemInMainHand(null)
-                            pillager.setAI(false)
-                            pillager.removeWhenFarAway = false
-                            pillager.isSilent = true
-                            pillager.equipment.helmet = null
-                            team.addEntity(pillager)
-                            pillager.isGlowing = true
-                            pillager.copy(pillager.location.add(0.0, 3.0, 0.0))
-                                .let { copy ->
-                                    copy.isInvisible = true
-                                    team.addEntity(copy)
-                                }
-                        }
-                    )
+                        Pillager::class.java
+                    ) { pillager ->
+                        pillager.equipment.setItemInMainHand(null)
+                        pillager.setAI(false)
+                        pillager.removeWhenFarAway = false
+                        pillager.isSilent = true
+                        pillager.equipment.helmet = null
+                        team.addEntity(pillager)
+                        pillager.isGlowing = true
+                        pillager.copy(pillager.location.add(0.0, 3.0, 0.0))
+                            .let { copy ->
+                                copy.isInvisible = true
+                                team.addEntity(copy)
+                            }
+                    }
                     posAddX += 1.5
                 }
             }

@@ -5,6 +5,7 @@ import com.mojang.brigadier.StringReader
 import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
+import com.mojang.brigadier.exceptions.CommandSyntaxException
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
@@ -18,6 +19,7 @@ import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
 import org.bukkit.entity.Pillager
 import org.bukkit.entity.Player
 import java.util.concurrent.CompletableFuture
@@ -33,7 +35,7 @@ object JoinTFTeamCommand {
                     TFPlayer.registerOrUpdatePlayer(
                         (ctx.source.sender as Player), team
                     )
-                    ctx.source.sender.sendMessage("팀 ${team.name.lowercase()} 에 추가되었습니다.")
+                    ctx.source.sender.sendMessage("팀 [${team.name.lowercase()}]에 추가되었습니다.")
                 } else ctx.source.sender.sendMessage(
                     text("플레이어만 팀에 참여할 수 있습니다.").color(NamedTextColor.RED))
                 Command.SINGLE_SUCCESS
@@ -47,7 +49,7 @@ object JoinTFTeamCommand {
                         TFPlayer.registerOrUpdatePlayer(it, tfTeam)
                     }
                     ctx.source.sender.sendMessage(
-                        text("${targets.size} 명의 플레이어를 팀에 추가했습니다"))
+                        text("${targets.size}명의 플레이어를 팀 [${tfTeam.name.lowercase()}]에 추가했습니다"))
                     Command.SINGLE_SUCCESS
                 }
             )
@@ -66,7 +68,7 @@ object JoinTFTeamCommand {
                 Command.SINGLE_SUCCESS
             }).build()
 
-    val testCmd = Commands.literal("newDommy")
+    val testCmd = Commands.literal("newDummy")
         .executes {
             if (it.source.sender is Player) {
                 val loc = (it.source.sender as Player).location
@@ -86,18 +88,16 @@ object JoinTFTeamCommand {
 class TFTeamArgument : CustomArgumentType<TFTeam, String> {
     override fun parse(p0: StringReader) = runCatching {
         TFTeam.valueOf(p0.readUnquotedString().uppercase())
-    }.getOrElse { throw SimpleCommandExceptionType { it.message ?: "???" }.create() }
+    }.getOrElse { throw SimpleCommandExceptionType {
+        "Not found team '${p0.readUnquotedString()}'." }.create() }
 
     override fun <S : Any> listSuggestions(
         context: CommandContext<S>,
         builder: SuggestionsBuilder
-    ): CompletableFuture<Suggestions> { // TODO 색깔 툴팁 추가
+    ): CompletableFuture<Suggestions> {
         TFTeam.nameByTeam.filter {
             it.key.startsWith(builder.remainingLowerCase)
         }.forEach { builder.suggest(it.key) { "${it.value.color}" } }
-//        TFTeam.teamNames.filter {
-//            it.startsWith(builder.remainingLowerCase)
-//        }.forEach { builder.suggest(it) }
         return builder.buildFuture()
     }
 

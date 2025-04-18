@@ -10,6 +10,7 @@ import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.scheduler.BukkitTask
 import java.time.Duration
 import java.util.function.Consumer
+import kotlin.math.round
 
 class DummyPlayer(
     private val entity: LivingEntity
@@ -138,9 +139,9 @@ class DummyFigureRevive(
         } else {
             figure.reviving = true
             val sb = StringBuilder("[")
-            for (i in 1..20)
-                // 진행 바가 끝까지 도달하게 함
-                if (i * 5 <= progress + 1) sb.append('=')
+            val step = round(progress / 100.0 * 15).toInt()
+            for (i in 1..15)
+                if (i <= step) sb.append('=')
                 else sb.append(' ')
             player.showTitle(Title.title(
                 Component.text(""), Component.text("$sb]"),

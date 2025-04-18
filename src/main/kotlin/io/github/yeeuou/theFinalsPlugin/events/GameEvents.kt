@@ -11,13 +11,14 @@ import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.getSpectatePlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
 import io.github.yeeuou.theFinalsPlugin.task.ReviveAnimationTask
-import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerAdvancementDoneEvent
@@ -28,7 +29,6 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerTeleportEvent
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.util.Vector
-import java.io.File
 
 class GameEvents : Listener {
     @EventHandler(ignoreCancelled = true)
@@ -42,7 +42,7 @@ class GameEvents : Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    fun figureDestroy(ev: EntityDeathEvent) {
+    fun figureDestroy(ev: EntityDamageEvent) {
         (ev.entity as? ArmorStand)?.figure()?.let {
             ev.isCancelled = true
             return
@@ -60,7 +60,7 @@ class GameEvents : Listener {
             val targetEntity = player.getTargetEntity(3) ?: return
             if (targetEntity is ArmorStand) targetEntity.figure()?.let {
                 // is self & check team
-                if (it.owner != this && it.owner.tfTeam != this.tfTeam) return
+                if (it.owner == this || it.owner.tfTeam != this.tfTeam) return
                 player.setMetadata("tf_holdRevive",
                     FixedMetadataValue(TheFinalsPlugin.instance, null))
                 Bukkit.getServer().scheduler.runTaskTimer(
@@ -96,15 +96,20 @@ class GameEvents : Listener {
 
     @EventHandler(ignoreCancelled = true)
     fun spectatorTeleport(ev: PlayerTeleportEvent) {
-        if (ev.cause == PlayerTeleportEvent.TeleportCause.SPECTATE)
-            ev.isCancelled = true
+        if (ev.cause == PlayerTeleportEvent.TeleportCause.SPECTATE) {
+            val tfP1 = ev.player.tfPlayer() ?: return
+            val player = ev.player.spectatorTarget
+            if (player !is Player) return
+            val tfP2 = player.tfPlayer() ?: return
+            if (tfP1.tfTeam != tfP2.tfTeam) ev.isCancelled = true
+        }
     }
 
     @EventHandler
     fun spectatorClickMouseBtn(ev: PlayerInteractEvent) {
         if (ev.player.gameMode != GameMode.SPECTATOR) return
         ev.player.tfPlayer()?.run {
-            if (!isDead) return
+            if (!isDead || waitTeamRespawn) return
             runCatching {
                 player.spectatorTarget = runCatching {
                     if (ev.action.isRightClick) {

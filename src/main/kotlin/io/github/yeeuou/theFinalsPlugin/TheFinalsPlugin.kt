@@ -34,12 +34,14 @@ class TheFinalsPlugin : JavaPlugin() {
 //        }.apply { setCanSeeFriendlyInvisibles(true) }
         server.pluginManager.registerEvents(GameEvents(), this)
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
-            it.registrar().register(JoinTFTeamCommand.joinCmd,
-                "팀에 자신(또는 다른 사람)을 등록해 보세요!")
-            it.registrar().register(JoinTFTeamCommand.ejectCmd,
-                "팀이 마음에 들지 않는다면 떠나보세요!")
-            it.registrar().register(ChangeTFTeamColor.cmd,
-                "팀의 색을 바꿉니다. 색을 바꾸면 바꿀 색을 가진 팀의 색상과 교체됩니다.")
+            it.registrar().run {
+                register(JoinTFTeamCommand.joinCmd,
+                    "팀에 자신(또는 다른 사람)을 등록해 보세요!")
+                register(JoinTFTeamCommand.ejectCmd,
+                    "팀이 마음에 들지 않는다면 떠나보세요!")
+                register(ChangeTFTeamColor.cmd,
+                    "팀의 색을 바꿉니다. 색을 바꾸면 바꿀 색의 팀과 교체됩니다.")
+            }
             // TESTING ONLY
             it.registrar().register(JoinTFTeamCommand.testCmd)
             it.registrar().register(ColorTest.cmd)

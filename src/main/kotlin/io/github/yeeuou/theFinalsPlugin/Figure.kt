@@ -51,10 +51,11 @@ class Figure(
                         itemMeta = meta
                     }
                 }
+//                it.boundingBox.expand(.25, .0, .25)
             }
         }
         spawnedFigures[figureEntity!!] = this
-        owner.tfTeam.addFigure(figureEntity!!)
+//        owner.tfTeam.addFigure(figureEntity!!)
     }
 
     fun remove() {
