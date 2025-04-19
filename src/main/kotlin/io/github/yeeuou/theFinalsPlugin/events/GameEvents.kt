@@ -10,14 +10,16 @@ import io.github.yeeuou.theFinalsPlugin.TFPlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.getSpectatePlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
+import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetEntity
 import io.github.yeeuou.theFinalsPlugin.task.ReviveAnimationTask
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.entity.ArmorStand
+import org.bukkit.entity.Entity
+import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.PlayerDeathEvent
@@ -28,9 +30,50 @@ import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerTeleportEvent
 import org.bukkit.metadata.FixedMetadataValue
+import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Vector
+import kotlin.math.pow
 
 class GameEvents : Listener {
+//    companion object {
+//        /** 조준점에서 각도내의 가장 가까운 엔티티를 찾음(각도가 작으면 타겟팅 이슈있음) */
+//        fun Player.getEntityInDegree(maxDistance: Number, deg: Number): LivingEntity? {
+//            val distanceToDouble = maxDistance.toDouble()
+//            val maxDistSquare = distanceToDouble.pow(2)
+//            val radAngle = Math.toRadians(deg.toDouble())
+//            val matchedByAngle = mutableMapOf<LivingEntity, Float>()
+//            var matched: LivingEntity? = null
+//            val direction = eyeLocation.direction.normalize()
+//            val entityInRadius =
+//                location.getNearbyLivingEntities(distanceToDouble)
+//                { location.distanceSquared(it.getCenterLoc()) <= maxDistSquare }
+//            entityInRadius.remove(this)
+//            // filter in angle
+//            for (e in entityInRadius) {
+//                val entityAngle = direction.angle(
+//                    e.getCenterLoc().toVector().subtract(
+//                        eyeLocation.toVector()).normalize())
+//                if (radAngle >= entityAngle && hasLineOfSight(e))
+//                    matchedByAngle[e] = entityAngle
+//            }
+//            // find minimum angle & distance
+//            val iter = matchedByAngle.iterator()
+//            if (!iter.hasNext()) return null
+//            var minAngle: Float
+//            var minDistance: Double
+//            iter.next().run {
+//                matched = key
+//                minDistance = location.distanceSquared(key.location)
+//                minAngle = value
+//            }
+//            for (entry in iter)
+//                if (minDistance > location.distanceSquared(entry.key.location)
+//                    && minAngle > entry.value) matched = entry.key
+//            return matched
+//        }
+//        private fun Entity.getCenterLoc() = location.add(.0,height / 2,.0)
+//    }
+
     @EventHandler(ignoreCancelled = true)
     fun onPlayerDead(ev: PlayerDeathEvent) {
         ev.player.tfPlayer()?.run {
@@ -57,7 +100,7 @@ class GameEvents : Listener {
         ev.player.getMetadata("tf_holdRevive")
             .forEach { if (it.owningPlugin is TheFinalsPlugin) return }
         ev.player.tfPlayer()?.run {
-            val targetEntity = player.getTargetEntity(3) ?: return
+            val targetEntity = player.getLooseTargetEntity(1.5) ?: return
             if (targetEntity is ArmorStand) targetEntity.figure()?.let {
                 // is self & check team
                 if (it.owner == this || it.owner.tfTeam != this.tfTeam) return
@@ -70,7 +113,7 @@ class GameEvents : Listener {
                 )
             }
         }
-        ev.player.getTargetEntity(3)?.run {
+        ev.player.getLooseTargetEntity(1.5)?.run {
             (this as? ArmorStand)?.let {
                 it.asDummyFigure()?.run {
                     ev.player.setMetadata("tf_holdRevive",
@@ -109,7 +152,7 @@ class GameEvents : Listener {
     fun spectatorClickMouseBtn(ev: PlayerInteractEvent) {
         if (ev.player.gameMode != GameMode.SPECTATOR) return
         ev.player.tfPlayer()?.run {
-            if (!isDead || waitTeamRespawn) return
+            if (!isDead || tfTeam.isAllPlayerDead()) return
             runCatching {
                 player.spectatorTarget = runCatching {
                     if (ev.action.isRightClick) {

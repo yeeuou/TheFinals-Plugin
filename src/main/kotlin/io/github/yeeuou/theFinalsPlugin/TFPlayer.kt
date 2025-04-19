@@ -5,7 +5,6 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
-import org.bukkit.EntityEffect
 import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
@@ -14,7 +13,6 @@ import org.bukkit.Sound
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
-import org.bukkit.scoreboard.Team
 import java.io.File
 import java.time.Duration
 import java.util.function.Consumer
@@ -245,7 +243,8 @@ class TFPlayer private constructor (
         player.spectatorTarget = null
         player.gameMode = GameMode.SURVIVAL
         player.teleport(loc)
-        player.spawnParticle(Particle.TOTEM_OF_UNDYING, loc, 400)
+        player.spawnParticle(Particle.TOTEM_OF_UNDYING, loc, 350)
+        player.playSound(player, Sound.ITEM_TOTEM_USE, .25f, 1.6f)
         player.noDamageTicks = 20 * 2
         player.foodLevel = 20
         player.saturation = 5f

@@ -8,16 +8,14 @@ import io.github.yeeuou.theFinalsPlugin.events.GameEvents
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
+import org.bukkit.FluidCollisionMode
 import org.bukkit.GameRule
+import org.bukkit.entity.LivingEntity
+import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
+import kotlin.math.pow
 
 class TheFinalsPlugin : JavaPlugin() {
-    companion object {
-        private lateinit var pl: JavaPlugin
-        val instance
-            get() = pl
-    }
-
     init {
         pl = this
     }
@@ -75,5 +73,40 @@ class TheFinalsPlugin : JavaPlugin() {
             }
         }
         Bukkit.getOnlinePlayers().forEach { it.tfPlayer()?.unload() }
+    }
+
+    companion object {
+        private lateinit var pl: JavaPlugin
+        val instance
+            get() = pl
+
+        fun Player.getLooseTargetEntity(maxDistance: Number): LivingEntity? {
+            val distanceD = maxDistance.toDouble()
+            val distSq = distanceD.pow(2)
+            val entityInRadius =
+                location.getNearbyLivingEntities(distanceD) {
+                    val loc = it.location; loc.y = location.y
+                    location.distanceSquared(loc) <= distSq
+                }
+            entityInRadius.remove(this)
+            val entityByDistance = mutableMapOf<LivingEntity, Double>()
+            entityInRadius.forEach { entity ->
+                entity.boundingBox.expand(.15).rayTrace(
+                    eyeLocation.toVector(),
+                    eyeLocation.direction,
+                    distanceD
+                )?.let {
+                    val entityDist = it.hitPosition.distanceSquared(eyeLocation.toVector())
+                    val blocked = world.rayTraceBlocks(eyeLocation,
+                        eyeLocation.direction, distanceD,
+                        FluidCollisionMode.NEVER)
+                    if (blocked != null && blocked.hitPosition
+                        .distanceSquared(eyeLocation.toVector()) < entityDist)
+                        return@forEach
+                    entityByDistance[entity] = entityDist
+                }
+            }
+            return entityByDistance.minByOrNull { it.value }?.key
+        }
     }
 }

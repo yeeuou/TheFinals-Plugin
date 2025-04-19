@@ -3,6 +3,7 @@ package io.github.yeeuou.theFinalsPlugin.task
 import io.github.yeeuou.theFinalsPlugin.Figure
 import io.github.yeeuou.theFinalsPlugin.Figure.Companion.figure
 import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
+import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetEntity
 import io.github.yeeuou.theFinalsPlugin.events.GameEvents
 import io.papermc.paper.util.Tick
 import net.kyori.adventure.text.Component
@@ -34,7 +35,7 @@ class ReviveAnimationTask(
 
     override fun accept(task: BukkitTask) {
         // 부활 끊기
-        val targetedFigure = (player.getTargetEntity(3) as? ArmorStand)?.figure()
+        val targetedFigure = (player.getLooseTargetEntity(1.5) as? ArmorStand)?.figure()
         if (targetedFigure == null || targetedFigure != figure) {
             player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
             player.getAttribute(Attribute.MOVEMENT_SPEED)?.removeModifier(key)
