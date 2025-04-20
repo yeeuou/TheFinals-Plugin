@@ -231,6 +231,7 @@ class TFPlayer private constructor (
 
     fun lateRespawn() {
         isDead = false
+        figure.remove()
         Bukkit.getScheduler().runTaskLater(
             TheFinalsPlugin.instance,
             { -> respawn(true) },

@@ -59,10 +59,12 @@ enum class TFTeam(color: NamedTextColor) {
                 colorList.remove(c)
             }
             // handling when config file has an error
-            if (unsolvedTeams.isNotEmpty()) (unsolvedTeams zip colorList).forEach {
-                it.first.color = it.second
+            if (unsolvedTeams.isNotEmpty()) {
+                (unsolvedTeams zip colorList).forEach {
+                    it.first.color = it.second
+                }
+                saveColor()
             }
-            saveColor()
         }
         private fun saveColor() {
             colorDefFile.apply { parentFile.mkdirs() }

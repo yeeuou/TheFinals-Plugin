@@ -28,6 +28,7 @@ class DummyPlayer(
         entityByDummy[entity] = this
     }
     private var dummyFigure: ArmorStand? = null
+    private var figureOverlapHandler: Figure.HandleFigureOverlapped? = null
 
     val figureUUID
         get() = dummyFigure?.uniqueId
@@ -66,6 +67,8 @@ class DummyPlayer(
             }
         }
         figures[dummyFigure!!] = this
+        figureOverlapHandler = Figure.HandleFigureOverlapped(dummyFigure!!)
+            .apply { startTask() }
         entity.world.spawnParticle(
             Particle.BLOCK,
             entity.location.add(0.0 ,1.0, 0.0),
@@ -77,24 +80,24 @@ class DummyPlayer(
         )
         entity.world.playSound(
             entity.location, Sound.BLOCK_CHAIN_BREAK,
-            .5f, 1f
+            .5f, .8f
         )
-        Bukkit.getScheduler().runTaskLater(
-            TheFinalsPlugin.instance,
-            DelayRespawnAction(),
-            100
-        )
+//        Bukkit.getScheduler().runTaskLater(
+//            TheFinalsPlugin.instance,
+//            DelayRespawnAction(),
+//            100
+//        )
         entity.remove()
     }
 
     fun respawn() {
         entityByDummy.remove(entity)
         dummyFigure?.remove()
+        figureOverlapHandler?.cancelTask()
         entity.world.spawn(dummyFigure?.location ?: entity.location,
             Pillager::class.java) {
             it.setAI(false)
             it.setGravity(false)
-//            it.addScoreboardTag(TeamManager.TAG_DUMMY)
             it.noDamageTicks = 30
             it.equipment.setItemInMainHand(null)
             DummyPlayer(it)
@@ -120,7 +123,7 @@ class DummyFigureRevive(
     private var progress = 0
     private val maxProgress = 100
     override fun accept(task: BukkitTask) {
-        val target = (player.getLooseTargetEntity(1.5) as? ArmorStand)
+        val target = (player.getLooseTargetEntity(1.75) as? ArmorStand)
         if (target == null || target.uniqueId != figure.figureUUID) {
             player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
             player.resetTitle()

@@ -35,7 +35,7 @@ class ReviveAnimationTask(
 
     override fun accept(task: BukkitTask) {
         // 부활 끊기
-        val targetedFigure = (player.getLooseTargetEntity(1.5) as? ArmorStand)?.figure()
+        val targetedFigure = (player.getLooseTargetEntity(1.75) as? ArmorStand)?.figure()
         if (targetedFigure == null || targetedFigure != figure) {
             player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
             player.getAttribute(Attribute.MOVEMENT_SPEED)?.removeModifier(key)
