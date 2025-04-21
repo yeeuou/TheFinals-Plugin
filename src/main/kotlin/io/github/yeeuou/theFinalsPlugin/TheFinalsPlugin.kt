@@ -1,16 +1,19 @@
 package io.github.yeeuou.theFinalsPlugin
 
+import com.mojang.brigadier.Command
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.github.yeeuou.theFinalsPlugin.commands.ChangeTFTeamColor
 import io.github.yeeuou.theFinalsPlugin.commands.ColorTest
-import io.github.yeeuou.theFinalsPlugin.commands.JoinTFTeamCommand
+import io.github.yeeuou.theFinalsPlugin.commands.TFCommand
 import io.github.yeeuou.theFinalsPlugin.events.GameEvents
+import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.FluidCollisionMode
 import org.bukkit.GameRule
 import org.bukkit.entity.LivingEntity
+import org.bukkit.entity.Pillager
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import kotlin.math.pow
@@ -32,16 +35,17 @@ class TheFinalsPlugin : JavaPlugin() {
 //        }.apply { setCanSeeFriendlyInvisibles(true) }
         server.pluginManager.registerEvents(GameEvents(), this)
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
-            it.registrar().run {
-                register(JoinTFTeamCommand.joinCmd,
-                    "팀에 자신(또는 다른 사람)을 등록해 보세요!")
-                register(JoinTFTeamCommand.ejectCmd,
-                    "팀이 마음에 들지 않는다면 떠나보세요!")
-                register(ChangeTFTeamColor.cmd,
-                    "팀의 색을 바꿉니다. 색을 바꾸면 바꿀 색의 팀과 교체됩니다.")
-            }
+            it.registrar().register(TFCommand.mainCmd)
+//            it.registrar().run {
+//                register(JoinTFTeamCommand.joinCmd,
+//                    "팀에 자신(또는 다른 사람)을 등록해 보세요!")
+//                register(JoinTFTeamCommand.ejectCmd,
+//                    "팀이 마음에 들지 않는다면 떠나보세요!")
+//                register(ChangeTFTeamColor.cmd,
+//                    "팀의 색을 바꿉니다. 색을 바꾸면 바꿀 색의 팀과 교체됩니다.")
+//            }
             // TESTING ONLY
-            it.registrar().register(JoinTFTeamCommand.testCmd)
+            it.registrar().register(testCmd)
             it.registrar().register(ColorTest.cmd)
             // ========
 //            it.registrar().register(Commands.literal("test").executes{ ctx ->
@@ -65,13 +69,27 @@ class TheFinalsPlugin : JavaPlugin() {
         }
     }
 
-    override fun onDisable() {
-        // remove test team
-        NamedTextColor.NAMES.values().forEach {
-            server.scoreboardManager.mainScoreboard.run {
-                getTeam("tf_test_$it")?.unregister()
+    val testCmd = Commands.literal("newDummy")
+        .executes {
+            if (it.source.sender is Player) {
+                val loc = (it.source.sender as Player).location
+                loc.world.spawn(loc, Pillager::class.java) {
+                    it.setAI(false)
+                    it.setGravity(false)
+                    it.equipment.setItemInMainHand(null)
+                    DummyPlayer(it)
+                }
             }
-        }
+            Command.SINGLE_SUCCESS
+        }.build()
+
+    override fun onDisable() {
+//        // remove test team
+//        NamedTextColor.NAMES.values().forEach {
+//            server.scoreboardManager.mainScoreboard.run {
+//                getTeam("tf_test_$it")?.unregister()
+//            }
+//        }
         Bukkit.getOnlinePlayers().forEach { it.tfPlayer()?.unload() }
     }
 

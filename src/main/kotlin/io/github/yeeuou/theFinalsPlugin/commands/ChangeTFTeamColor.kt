@@ -8,7 +8,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 
 object ChangeTFTeamColor {
-    val cmd = Commands.literal("tfteam-color")
+    val cmd = Commands.literal("color")
         .then(Commands.argument("team", TFTeamArgument())
             .then(Commands.argument("color", ArgumentTypes.namedColor())
                 .executes { ctx ->
