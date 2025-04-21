@@ -2,19 +2,17 @@ package io.github.yeeuou.theFinalsPlugin.task
 
 import io.github.yeeuou.theFinalsPlugin.Figure
 import io.github.yeeuou.theFinalsPlugin.Figure.Companion.figure
+import io.github.yeeuou.theFinalsPlugin.TFConfig
 import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
-import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetEntity
-import io.github.yeeuou.theFinalsPlugin.events.GameEvents
+import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetArmorStand
 import io.papermc.paper.util.Tick
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
 import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
-import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
-import org.bukkit.util.Vector
 import java.time.Duration
 import java.util.function.Consumer
 import kotlin.math.round
@@ -35,7 +33,8 @@ class ReviveAnimationTask(
 
     override fun accept(task: BukkitTask) {
         // 부활 끊기
-        val targetedFigure = (player.getLooseTargetEntity(1.75) as? ArmorStand)?.figure()
+        val targetedFigure =
+            player.getLooseTargetArmorStand(TFConfig.REVIVE_MAX_RANGE)?.figure()
         if (targetedFigure == null || targetedFigure != figure) {
             player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
             player.getAttribute(Attribute.MOVEMENT_SPEED)?.removeModifier(key)

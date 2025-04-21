@@ -1,6 +1,6 @@
 package io.github.yeeuou.theFinalsPlugin
 
-import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetEntity
+import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetArmorStand
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
 import org.bukkit.*
@@ -123,7 +123,8 @@ class DummyFigureRevive(
     private var progress = 0
     private val maxProgress = 100
     override fun accept(task: BukkitTask) {
-        val target = (player.getLooseTargetEntity(1.75) as? ArmorStand)
+        val target =
+            player.getLooseTargetArmorStand(TFConfig.REVIVE_MAX_RANGE)
         if (target == null || target.uniqueId != figure.figureUUID) {
             player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
             player.resetTitle()

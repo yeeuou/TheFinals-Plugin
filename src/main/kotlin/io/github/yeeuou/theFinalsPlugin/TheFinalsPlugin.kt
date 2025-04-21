@@ -2,16 +2,15 @@ package io.github.yeeuou.theFinalsPlugin
 
 import com.mojang.brigadier.Command
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
-import io.github.yeeuou.theFinalsPlugin.commands.ChangeTFTeamColor
 import io.github.yeeuou.theFinalsPlugin.commands.ColorTest
 import io.github.yeeuou.theFinalsPlugin.commands.TFCommand
 import io.github.yeeuou.theFinalsPlugin.events.GameEvents
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
-import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.FluidCollisionMode
 import org.bukkit.GameRule
+import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Pillager
 import org.bukkit.entity.Player
@@ -69,10 +68,10 @@ class TheFinalsPlugin : JavaPlugin() {
         }
     }
 
-    val testCmd = Commands.literal("newDummy")
-        .executes {
-            if (it.source.sender is Player) {
-                val loc = (it.source.sender as Player).location
+    private val testCmd = Commands.literal("newDummy")
+        .executes { ctx ->
+            if (ctx.source.sender is Player) {
+                val loc = (ctx.source.sender as Player).location
                 loc.world.spawn(loc, Pillager::class.java) {
                     it.setAI(false)
                     it.setGravity(false)
@@ -98,7 +97,8 @@ class TheFinalsPlugin : JavaPlugin() {
         val instance
             get() = pl
 
-        fun Player.getLooseTargetEntity(maxDistance: Number): LivingEntity? {
+/*
+        fun Player.getLooseTargetEntitiesByDist(maxDistance: Number): Map<LivingEntity, Double> {
             val distanceD = maxDistance.toDouble()
             val distSq = distanceD.pow(2)
             val entityInRadius =
@@ -109,7 +109,7 @@ class TheFinalsPlugin : JavaPlugin() {
             entityInRadius.remove(this)
             val entityByDistance = mutableMapOf<LivingEntity, Double>()
             entityInRadius.forEach { entity ->
-                entity.boundingBox.expand(.15).rayTrace(
+                entity.boundingBox.expand(.3).rayTrace(
                     eyeLocation.toVector(),
                     eyeLocation.direction,
                     distanceD
@@ -119,12 +119,45 @@ class TheFinalsPlugin : JavaPlugin() {
                         eyeLocation.direction, distanceD,
                         FluidCollisionMode.NEVER)
                     if (blocked != null && blocked.hitPosition
-                        .distanceSquared(eyeLocation.toVector()) < entityDist)
+                            .distanceSquared(eyeLocation.toVector()) < entityDist)
                         return@forEach
                     entityByDistance[entity] = entityDist
                 }
             }
-            return entityByDistance.minByOrNull { it.value }?.key
+            return entityByDistance.toMap()
+        }
+*/
+
+//        fun Player.getLooseTargetEntity(maxDistance: Number): LivingEntity? {
+//            return getLooseTargetEntitiesByDist(maxDistance).minByOrNull { it.value }?.key
+//        }
+
+        fun Player.getLooseTargetArmorStand(maxDistance: Number): ArmorStand? {
+            val distanceD = maxDistance.toDouble()
+            val distSq = distanceD.pow(2)
+            val entityInRadius =
+                location.getNearbyLivingEntities(distanceD) {
+                    val loc = it.location; loc.y = location.y
+                    location.distanceSquared(loc) <= distSq
+                }
+            val entityByDistance = mutableMapOf<LivingEntity, Double>()
+            entityInRadius.filter { it is ArmorStand }.forEach { entity ->
+                entity.boundingBox.expand(.2).rayTrace(
+                    eyeLocation.toVector(),
+                    eyeLocation.direction,
+                    distanceD
+                )?.let {
+                    val entityDist = it.hitPosition.distanceSquared(eyeLocation.toVector())
+                    val blocked = world.rayTraceBlocks(eyeLocation,
+                        eyeLocation.direction, distanceD,
+                        FluidCollisionMode.NEVER)
+                    if (blocked != null && blocked.hitPosition
+                            .distanceSquared(eyeLocation.toVector()) < entityDist)
+                        return@forEach
+                    entityByDistance[entity] = entityDist
+                }
+            }
+            return entityByDistance.minByOrNull { it.value }?.key as? ArmorStand
         }
     }
 }

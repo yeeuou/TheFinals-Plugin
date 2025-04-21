@@ -6,11 +6,12 @@ import io.github.yeeuou.theFinalsPlugin.DummyFigureRevive
 import io.github.yeeuou.theFinalsPlugin.DummyPlayer
 import io.github.yeeuou.theFinalsPlugin.DummyPlayer.Companion.asDummyFigure
 import io.github.yeeuou.theFinalsPlugin.Figure.Companion.figure
+import io.github.yeeuou.theFinalsPlugin.TFConfig
 import io.github.yeeuou.theFinalsPlugin.TFPlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.getSpectatePlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
-import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetEntity
+import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetArmorStand
 import io.github.yeeuou.theFinalsPlugin.task.ReviveAnimationTask
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -42,7 +43,7 @@ class GameEvents : Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    fun figureDestroy(ev: EntityDamageEvent) {
+    fun onFigureDamage(ev: EntityDamageEvent) {
         (ev.entity as? ArmorStand)?.figure()?.let {
             ev.isCancelled = true
             return
@@ -52,13 +53,20 @@ class GameEvents : Listener {
         }
     }
 
+    @EventHandler(ignoreCancelled = true)
+    fun onFigureDead(ev: EntityDeathEvent) {
+        (ev.entity as? ArmorStand)?.figure()
+            ?.let { ev.isCancelled = true }
+    }
+
     @EventHandler
     fun playerLookAtFigure(ev: PlayerMoveEvent) {
         ev.player.getMetadata("tf_holdRevive")
             .forEach { if (it.owningPlugin is TheFinalsPlugin) return }
         ev.player.tfPlayer()?.run {
-            val targetEntity = player.getLooseTargetEntity(1.75) ?: return
-            if (targetEntity is ArmorStand) targetEntity.figure()?.let {
+            val targetEntity =
+                player.getLooseTargetArmorStand(TFConfig.REVIVE_MAX_RANGE) ?: return
+            targetEntity.figure()?.let {
                 // is self & check team
                 if (it.owner == this || it.owner.tfTeam != this.tfTeam) return
                 player.setMetadata("tf_holdRevive",
@@ -70,17 +78,15 @@ class GameEvents : Listener {
                 )
             }
         }
-        ev.player.getLooseTargetEntity(1.75)?.run {
-            (this as? ArmorStand)?.let {
-                it.asDummyFigure()?.run {
-                    ev.player.setMetadata("tf_holdRevive",
-                        FixedMetadataValue(TheFinalsPlugin.instance, null))
-                    Bukkit.getScheduler().runTaskTimer(
-                        TheFinalsPlugin.instance,
-                        DummyFigureRevive(ev.player, this),
-                        0, 1
-                    )
-                }
+        ev.player.getLooseTargetArmorStand(TFConfig.REVIVE_MAX_RANGE)?.let {
+            it.asDummyFigure()?.run {
+                ev.player.setMetadata("tf_holdRevive",
+                    FixedMetadataValue(TheFinalsPlugin.instance, null))
+                Bukkit.getScheduler().runTaskTimer(
+                    TheFinalsPlugin.instance,
+                    DummyFigureRevive(ev.player, this),
+                    0, 1
+                )
             }
         }
     }
@@ -141,6 +147,12 @@ class GameEvents : Listener {
                 ev.isCancelled = true
         }
     }
+
+//    @EventHandler
+//    fun pressSpace(ev: PlayerToggleSneakEvent) {
+//        if (ev.player.gameMode == GameMode.SPECTATOR)
+//            Bukkit.broadcast(Component.text("player sneak: ${ev.player.name}"))
+//    }
 
     @EventHandler
     fun playerGetAdvancement(ev: PlayerAdvancementDoneEvent) {
