@@ -55,6 +55,8 @@ class TFPlayer private constructor (
         val spectatorPlayers = mutableMapOf<TFPlayer, TFPlayer>()
         fun TFPlayer.getSpectatePlayer() = spectatorPlayers[this]
 
+        val playerGrabFigure = mutableMapOf<TFPlayer, Figure>()
+
         fun tryLoad(player: Player) {
             val file = File(playerDataFolder, "${player.uniqueId}.yml")
             if (!file.exists()) return
@@ -99,6 +101,9 @@ class TFPlayer private constructor (
 
     private val figure = Figure(this)
 
+    val grabFigure: Figure?
+        get() = playerGrabFigure[this]
+
     init { // 등록
         playerByPlayers[player] = this
         tfTeam.addPlayer(this)
@@ -123,6 +128,7 @@ class TFPlayer private constructor (
     }
 
     fun unload() {
+        if (grabFigure != null) putDownFigure()
         save()
         tfTeam.removePlayer(this)
         playerByPlayers.remove(player)
@@ -130,6 +136,7 @@ class TFPlayer private constructor (
             figure.remove()
             spectatorPlayers.remove(this)
         }
+        isDead = false // remove remaining tasks
     }
 
     private fun save() {
@@ -146,14 +153,8 @@ class TFPlayer private constructor (
     }
 
     fun unregister() {
+        unload()
         File(playerDataFolder, "${player.uniqueId}.yml").delete()
-        playerByPlayers.remove(player)
-        tfTeam.removePlayer(this)
-        if (isDead) {
-            figure.remove()
-            spectatorPlayers.remove(this)
-        }
-        isDead = false // remove remaining tasks
     }
 
     fun addCoin(add: Int = 1) {
@@ -253,6 +254,21 @@ class TFPlayer private constructor (
         player.beeStingersInBody = 0
     }
 
+    fun grab(figure: Figure) {
+        playerGrabFigure[this] = figure
+    }
+
+    fun throwFigure() {
+        if (grabFigure == null) throw IllegalStateException("Grab figure is null.")
+        grabFigure!!.throwIt(player.eyeLocation.direction.clone())
+        playerGrabFigure.remove(this)
+    }
+
+    fun putDownFigure() {
+        if (grabFigure == null) throw IllegalStateException("Grab figure is null.")
+        playerGrabFigure.remove(this)
+    }
+
     private inner class WaitRespawnTime : Consumer<BukkitTask> {
         private var tick = 0
         override fun accept(task: BukkitTask) {
@@ -271,6 +287,7 @@ class TFPlayer private constructor (
                     PressStartTask(),
                     0, 1
                 )
+                player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, .3f, 1f)
                 task.cancel()
             }
         }

@@ -12,6 +12,7 @@ import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.getSpectatePlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
 import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetArmorStand
+import io.github.yeeuou.theFinalsPlugin.task.GrabFigureTask
 import io.github.yeeuou.theFinalsPlugin.task.ReviveAnimationTask
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -126,6 +127,21 @@ class GameEvents : Listener {
         }
     }
 
+    @EventHandler
+    fun onClickMouseBtn(ev: PlayerInteractEvent) {
+        if (ev.player.gameMode == GameMode.SPECTATOR) return
+        ev.player.tfPlayer()?.run {
+            if (grabFigure == null && ev.action.isLeftClick) {
+                player.getLooseTargetArmorStand(TFConfig.GRAB_MAX_RANGE)
+                    ?.figure()?.startGrabTask(this)
+                return
+            }
+            if (grabFigure == null) return
+            if (ev.action.isLeftClick) throwFigure()
+            else putDownFigure()
+        }
+    }
+
     @EventHandler(ignoreCancelled = true)
     fun enterSpector(ev: PlayerStartSpectatingEntityEvent) {
         ev.player.tfPlayer()?.run {
@@ -147,12 +163,6 @@ class GameEvents : Listener {
                 ev.isCancelled = true
         }
     }
-
-//    @EventHandler
-//    fun pressSpace(ev: PlayerToggleSneakEvent) {
-//        if (ev.player.gameMode == GameMode.SPECTATOR)
-//            Bukkit.broadcast(Component.text("player sneak: ${ev.player.name}"))
-//    }
 
     @EventHandler
     fun playerGetAdvancement(ev: PlayerAdvancementDoneEvent) {

@@ -7,8 +7,10 @@ import io.github.yeeuou.theFinalsPlugin.commands.TFCommand
 import io.github.yeeuou.theFinalsPlugin.events.GameEvents
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.FluidCollisionMode
+import org.bukkit.GameMode
 import org.bukkit.GameRule
 import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.LivingEntity
@@ -141,22 +143,25 @@ class TheFinalsPlugin : JavaPlugin() {
                     location.distanceSquared(loc) <= distSq
                 }
             val entityByDistance = mutableMapOf<LivingEntity, Double>()
-            entityInRadius.filter { it is ArmorStand }.forEach { entity ->
-                entity.boundingBox.expand(.2).rayTrace(
-                    eyeLocation.toVector(),
-                    eyeLocation.direction,
-                    distanceD
-                )?.let {
-                    val entityDist = it.hitPosition.distanceSquared(eyeLocation.toVector())
-                    val blocked = world.rayTraceBlocks(eyeLocation,
-                        eyeLocation.direction, distanceD,
-                        FluidCollisionMode.NEVER)
-                    if (blocked != null && blocked.hitPosition
+            entityInRadius.remove(this)
+            // 관전중인 플레이어만 제외
+            entityInRadius.filterNot { it is Player && it.gameMode == GameMode.SPECTATOR }
+                .forEach { entity ->
+                    entity.boundingBox.expand(.2).rayTrace(
+                        eyeLocation.toVector(),
+                        eyeLocation.direction,
+                        distanceD
+                    )?.let {
+                        val entityDist = it.hitPosition.distanceSquared(eyeLocation.toVector())
+                        val blocked = world.rayTraceBlocks(eyeLocation,
+                            eyeLocation.direction, distanceD,
+                            FluidCollisionMode.NEVER)
+                        if (blocked != null && blocked.hitPosition
                             .distanceSquared(eyeLocation.toVector()) < entityDist)
-                        return@forEach
-                    entityByDistance[entity] = entityDist
+                            return@forEach
+                        entityByDistance[entity] = entityDist
+                    }
                 }
-            }
             return entityByDistance.minByOrNull { it.value }?.key as? ArmorStand
         }
     }

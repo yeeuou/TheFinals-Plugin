@@ -28,7 +28,7 @@ class DummyPlayer(
         entityByDummy[entity] = this
     }
     private var dummyFigure: ArmorStand? = null
-    private var figureOverlapHandler: Figure.HandleFigureOverlapped? = null
+//    private var figureOverlapHandler: Figure.HandleFigureOverlapped? = null
 
     val figureUUID
         get() = dummyFigure?.uniqueId
@@ -67,8 +67,8 @@ class DummyPlayer(
             }
         }
         figures[dummyFigure!!] = this
-        figureOverlapHandler = Figure.HandleFigureOverlapped(dummyFigure!!)
-            .apply { startTask() }
+//        figureOverlapHandler = Figure.HandleFigureOverlapped(dummyFigure!!)
+//            .apply { startTask() }
         entity.world.spawnParticle(
             Particle.BLOCK,
             entity.location.add(0.0 ,1.0, 0.0),
@@ -93,7 +93,7 @@ class DummyPlayer(
     fun respawn() {
         entityByDummy.remove(entity)
         dummyFigure?.remove()
-        figureOverlapHandler?.cancelTask()
+//        figureOverlapHandler?.cancelTask()
         entity.world.spawn(dummyFigure?.location ?: entity.location,
             Pillager::class.java) {
             it.setAI(false)

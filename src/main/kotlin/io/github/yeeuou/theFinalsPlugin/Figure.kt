@@ -1,8 +1,11 @@
 package io.github.yeeuou.theFinalsPlugin
 
+import io.github.yeeuou.theFinalsPlugin.task.GrabFigureTask
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.Material
+import org.bukkit.Particle
 import org.bukkit.entity.ArmorStand
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
@@ -60,21 +63,54 @@ class Figure(
             }
         }
         spawnedFigures[figureEntity!!] = this
-        overlapHandler = HandleFigureOverlapped(figureEntity!!).apply {
-            startTask()
-        }
+        overlapHandler = HandleFigureOverlapped(this, figureEntity!!)
+            .apply { startTask() }
 //        owner.tfTeam.addFigure(figureEntity!!)
     }
 
     fun remove() {
 //        if (!owner.isDead) return
         overlapHandler?.cancelTask()
+        // 잡기 해제
+        TFPlayer.playerGrabFigure.entries.find { it.value == this }
+            ?.let { TFPlayer.playerGrabFigure.remove(it.key) }
         spawnedFigures.remove(figureEntity)
         figureEntity?.remove()
         figureEntity = null
     }
 
-    internal class HandleFigureOverlapped(private val armorStand: ArmorStand) {
+    fun startGrabTask(p: TFPlayer) {
+        checkNotNull(figureEntity) { "No grab entity" }
+        Bukkit.getScheduler().runTaskTimer(
+            TheFinalsPlugin.instance,
+            GrabFigureTask(p, this, figureEntity!!),
+            0, 1
+        )
+    }
+
+    fun throwIt(vec: Vector) {
+        if (figureEntity == null) return
+        // check block overlap
+//        buildList {
+//            figureEntity!!.run {
+//                boundingBox.let {
+//                    add(location.set(it.minX, it.minY, it.minZ).block)
+//                    add(location.set(it.maxX, it.minY, it.minZ).block)
+//                    add(location.set(it.minX, it.minY, it.maxZ).block)
+//                    add(location.set(it.maxX, it.minY, it.maxZ).block)
+//                }
+//            }
+//        }.any { figureEntity!!.boundingBox.overlaps(it.boundingBox) }
+//            .also {
+//                if (!it) figureEntity!!.velocity = vec.normalize()
+//            }
+        figureEntity!!.velocity = vec.normalize()
+    }
+
+    internal class HandleFigureOverlapped(
+        private val figure: Figure,
+        private val armorStand: ArmorStand
+    ) {
         private lateinit var task: BukkitTask
         fun startTask() {
             task = Bukkit.getScheduler().runTaskTimer(
@@ -93,12 +129,14 @@ class Figure(
                     task.cancel()
                     return
                 }
+                if (figure in TFPlayer.playerGrabFigure.values) return
                 val isInLiquid = armorStand.isInLava || armorStand.isInWater
                 if (isInLiquid) {
                     armorStand.velocity = Vector(.0, .1, .0)
                 }
                 if (armorStand.world.minHeight - 3 >= armorStand.y)
-                    armorStand.velocity = Vector(.0, 1.2, .0)
+                    armorStand.velocity = Vector(0, 1, 0)
+
                 val blocks = buildList {
                     armorStand.boundingBox.let { box ->
                         armorStand.location.let {
@@ -110,11 +148,12 @@ class Figure(
                             add(it.set(box.maxX, box.minY, box.minZ).block) // 2
                             add(it.set(box.minX, box.minY, box.maxZ).block) // 3
                             add(it.set(box.maxX, box.minY, box.maxZ).block) // 4
+                            add(it.block) // this position
                         }
                     }
                 }
                 val overlapped = blocks.filter {
-                    armorStand.boundingBox.overlaps(it.boundingBox) }
+                   it.isSolid && armorStand.boundingBox.overlaps(it.boundingBox) }
 
                 if (overlapped.isNotEmpty()) {
 //                    armorStand.addPotionEffect(PotionEffectType.GLOWING
@@ -123,19 +162,24 @@ class Figure(
                         armorStand.boundingBox.center
                             .subtract(it.location.toCenterLocation().toVector())
                             .normalize()
-                    }.fold(Vector(0, 0, 0)) { acc, vec ->
+                    }.fold(Vector()) { acc, vec ->
                         acc.add(vec)
                     }.let {
-                        it.y = max(it.y, .4)
-                        armorStand.velocity = it.normalize().multiply(.175)
+                        it.y = max(it.y, 25.0) // 조정필요
+                        armorStand.velocity = it.normalize().multiply(.2)
+                        armorStand.world.spawnParticle(
+                            Particle.DUST,
+                            armorStand.location.add(armorStand.velocity),
+                            1, Particle.DustOptions(Color.RED, 1f)
+                        )
                     }
-                    // 위가 막혔을 때
-                    armorStand.location.toBlockLocation().let {
-                        it.y++
-                        if (it.block.isCollidable)
-                            armorStand.teleport(armorStand
-                                .location.add(.0, .1, .0))
-                    }
+//                    // 위가 막혔을 때
+//                    armorStand.location.toBlockLocation().let {
+//                        it.y++
+//                        if (it.block.isCollidable)
+//                            armorStand.teleport(armorStand
+//                                .location.add(.0, .1, .0))
+//                    }
                 }
             }
         }
