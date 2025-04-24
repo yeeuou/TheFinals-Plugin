@@ -9,7 +9,7 @@ import java.util.function.Consumer
 
 class GrabFigureTask(
     private val tfPlayer: TFPlayer,
-    private val figure: Figure,
+    figure: Figure,
     private val stand: ArmorStand
 ): Consumer<BukkitTask> {
     init {
@@ -23,7 +23,7 @@ class GrabFigureTask(
         val eyeDir = tfPlayer.player.eyeLocation.direction.normalize()
         val mvRight = eyeDir.clone().crossProduct(Vector(0, 1, 0)).normalize()
         stand.teleport(tfPlayer.player.eyeLocation.add(.0, -.5, .0).add(
-            eyeDir.multiply(1.3).add(mvRight.multiply(.75))
+            eyeDir.multiply(.9).add(mvRight.multiply(.5))
         ).apply { yaw -= 180 })
     }
 }

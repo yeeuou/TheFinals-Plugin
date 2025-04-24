@@ -65,6 +65,7 @@ class GameEvents : Listener {
         ev.player.getMetadata("tf_holdRevive")
             .forEach { if (it.owningPlugin is TheFinalsPlugin) return }
         ev.player.tfPlayer()?.run {
+            if (this in TFPlayer.playerGrabFigure) return
             val targetEntity =
                 player.getLooseTargetArmorStand(TFConfig.REVIVE_MAX_RANGE) ?: return
             targetEntity.figure()?.let {
@@ -134,6 +135,7 @@ class GameEvents : Listener {
             if (grabFigure == null && ev.action.isLeftClick) {
                 player.getLooseTargetArmorStand(TFConfig.GRAB_MAX_RANGE)
                     ?.figure()?.startGrabTask(this)
+                ev.isCancelled = true
                 return
             }
             if (grabFigure == null) return
@@ -156,7 +158,7 @@ class GameEvents : Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    fun exitSpector(ev: PlayerStopSpectatingEntityEvent) {
+    fun exitSpector(ev: PlayerStopSpectatingEntityEvent) { // TODO 버그있음
         ev.player.tfPlayer()?.run {
             if (canRespawn && isDead) lateRespawn()
             if (this in TFPlayer.spectatorPlayers)

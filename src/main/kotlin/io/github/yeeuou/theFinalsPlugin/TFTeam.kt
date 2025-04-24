@@ -21,7 +21,7 @@ enum class TFTeam(color: NamedTextColor) {
     ULTRA_RARE(NamedTextColor.DARK_GREEN), JET_SETTERS(NamedTextColor.DARK_BLUE),
     KINGFISH(NamedTextColor.DARK_RED), TOUGH_SHELLS(NamedTextColor.DARK_GRAY),
     POWER_HOUSE(NamedTextColor.DARK_AQUA), HI_NOTES(NamedTextColor.WHITE);
-    
+
     companion object {
         val nameByTeam = buildMap {
             TFTeam.entries.forEach {
@@ -109,8 +109,6 @@ enum class TFTeam(color: NamedTextColor) {
         // 한명만 살았을 때
         if (alivePlayers.size == 1) return current
         val currentIndex = alivePlayers.indexOf(current)
-//        // 현재 관전중인 플레이어가 리스트의 끝에 있을 때
-//        if (alivePlayers.lastIndex == currentIndex) return alivePlayers[0]
         return alivePlayers[(currentIndex + 1) % alivePlayers.lastIndex]
     }
 
@@ -166,7 +164,6 @@ enum class TFTeam(color: NamedTextColor) {
         get() = Bukkit.getScoreboardManager().mainScoreboard.run {
             getTeam("TF_$name") ?:
             registerNewTeam("TF_$name").apply {
-//                color(this@TFTeam.color)
                 setCanSeeFriendlyInvisibles(true)
                 setAllowFriendlyFire(false)
                 setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.FOR_OWN_TEAM)

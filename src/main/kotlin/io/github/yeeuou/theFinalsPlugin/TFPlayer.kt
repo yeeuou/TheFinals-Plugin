@@ -225,6 +225,7 @@ class TFPlayer private constructor (
     fun reviveFromFigure() {
         if (!isDead) return // if late respawn
         val loc = requireNotNull(figure.figureLoc) { "No revive without figure!" }
+            .apply { pitch = 0f }
         figure.remove()
         isDead = false
         playerRespawnProcess(loc)
@@ -260,12 +261,13 @@ class TFPlayer private constructor (
 
     fun throwFigure() {
         if (grabFigure == null) throw IllegalStateException("Grab figure is null.")
-        grabFigure!!.throwIt(player.eyeLocation.direction.clone())
+        grabFigure!!.throwIt(player.eyeLocation, player.eyeLocation.direction.clone())
         playerGrabFigure.remove(this)
     }
 
     fun putDownFigure() {
         if (grabFigure == null) throw IllegalStateException("Grab figure is null.")
+        grabFigure!!.putDownIt(player.eyeLocation)
         playerGrabFigure.remove(this)
     }
 

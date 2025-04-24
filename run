@@ -3,7 +3,7 @@
 # 옵션 설정
 
 # 서버 종류(serverType)-버전(version)-빌드(build)
-server="paper-1.21.4-224"
+server="paper-1.21.4-226"
 # 최대 플레이어 수
 maxPlayer=5
 # 서버 파일
