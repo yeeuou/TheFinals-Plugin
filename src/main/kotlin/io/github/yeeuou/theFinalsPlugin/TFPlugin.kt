@@ -7,7 +7,7 @@ import io.github.yeeuou.theFinalsPlugin.commands.TFCommand
 import io.github.yeeuou.theFinalsPlugin.events.GameEvents
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
-import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.FluidCollisionMode
 import org.bukkit.GameMode
@@ -19,7 +19,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import kotlin.math.pow
 
-class TheFinalsPlugin : JavaPlugin() {
+class TFPlugin : JavaPlugin() {
     init {
         pl = this
     }
@@ -28,12 +28,10 @@ class TheFinalsPlugin : JavaPlugin() {
         server.worlds.forEach {
             it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
             it.setGameRule(GameRule.KEEP_INVENTORY, true)
+            it.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, true)
         }
         Bukkit.getOnlinePlayers().forEach(TFPlayer::tryLoad)
         TFTeam.loadColor()
-//        val t = server.scoreboardManager.mainScoreboard.run {
-//            getTeam("TEST") ?: registerNewTeam("TEST")
-//        }.apply { setCanSeeFriendlyInvisibles(true) }
         server.pluginManager.registerEvents(GameEvents(), this)
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
             it.registrar().register(TFCommand.mainCmd)
@@ -49,24 +47,6 @@ class TheFinalsPlugin : JavaPlugin() {
             it.registrar().register(testCmd)
             it.registrar().register(ColorTest.cmd)
             // ========
-//            it.registrar().register(Commands.literal("test").executes{ ctx ->
-//                if (ctx.source.sender is Player)
-//                        (ctx.source.sender as Player).run {
-//                            t.entries.forEach(t::removeEntry)
-//                            t.addEntity(this)
-//                            world.spawn(location, Villager::class.java) {
-//                                it.setAI(false)
-////                                this.sendPotionEffectChange(it, PotionEffect(
-////                                    PotionEffectType.GLOWING, 30, 0,
-////                                    false, false, false
-////                                ))
-//                                it.isInvisible = true
-//                                it.location.setRotation(0f, 0f)
-//                                t.addEntity(it)
-//                            }
-//                        }
-//                Command.SINGLE_SUCCESS
-//            }.build())
         }
     }
 
@@ -85,12 +65,12 @@ class TheFinalsPlugin : JavaPlugin() {
         }.build()
 
     override fun onDisable() {
-//        // remove test team
-//        NamedTextColor.NAMES.values().forEach {
-//            server.scoreboardManager.mainScoreboard.run {
-//                getTeam("tf_test_$it")?.unregister()
-//            }
-//        }
+        // remove test team
+        NamedTextColor.NAMES.values().forEach {
+            server.scoreboardManager.mainScoreboard.run {
+                getTeam("tf_test_$it")?.unregister()
+            }
+        }
         Bukkit.getOnlinePlayers().forEach { it.tfPlayer()?.unload() }
     }
 
@@ -98,41 +78,6 @@ class TheFinalsPlugin : JavaPlugin() {
         private lateinit var pl: JavaPlugin
         val instance
             get() = pl
-
-/*
-        fun Player.getLooseTargetEntitiesByDist(maxDistance: Number): Map<LivingEntity, Double> {
-            val distanceD = maxDistance.toDouble()
-            val distSq = distanceD.pow(2)
-            val entityInRadius =
-                location.getNearbyLivingEntities(distanceD) {
-                    val loc = it.location; loc.y = location.y
-                    location.distanceSquared(loc) <= distSq
-                }
-            entityInRadius.remove(this)
-            val entityByDistance = mutableMapOf<LivingEntity, Double>()
-            entityInRadius.forEach { entity ->
-                entity.boundingBox.expand(.3).rayTrace(
-                    eyeLocation.toVector(),
-                    eyeLocation.direction,
-                    distanceD
-                )?.let {
-                    val entityDist = it.hitPosition.distanceSquared(eyeLocation.toVector())
-                    val blocked = world.rayTraceBlocks(eyeLocation,
-                        eyeLocation.direction, distanceD,
-                        FluidCollisionMode.NEVER)
-                    if (blocked != null && blocked.hitPosition
-                            .distanceSquared(eyeLocation.toVector()) < entityDist)
-                        return@forEach
-                    entityByDistance[entity] = entityDist
-                }
-            }
-            return entityByDistance.toMap()
-        }
-*/
-
-//        fun Player.getLooseTargetEntity(maxDistance: Number): LivingEntity? {
-//            return getLooseTargetEntitiesByDist(maxDistance).minByOrNull { it.value }?.key
-//        }
 
         fun Player.getLooseTargetArmorStand(maxDistance: Number): ArmorStand? {
             val distanceD = maxDistance.toDouble()

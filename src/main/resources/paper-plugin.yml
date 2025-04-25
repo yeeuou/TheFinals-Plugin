@@ -1,6 +1,6 @@
-name: TheFinalsPlugin
+name: TheFinals-Plugin
 version: '$version'
 description: Reach The Finals
 author: _yeeuou
-main: io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
+main: io.github.yeeuou.theFinalsPlugin.TFPlugin
 api-version: '1.21'

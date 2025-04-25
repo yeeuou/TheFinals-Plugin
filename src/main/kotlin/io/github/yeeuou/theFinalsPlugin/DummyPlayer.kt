@@ -1,6 +1,6 @@
 package io.github.yeeuou.theFinalsPlugin
 
-import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetArmorStand
+import io.github.yeeuou.theFinalsPlugin.TFPlugin.Companion.getLooseTargetArmorStand
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
 import org.bukkit.*
@@ -109,7 +109,7 @@ class DummyPlayer(
             if (!isDead) return
             if (reviving) {
                 Bukkit.getScheduler().runTaskLater(
-                    TheFinalsPlugin.instance, DelayRespawnAction(), 1
+                    TFPlugin.instance, DelayRespawnAction(), 1
                 )
             } else respawn()
         }
@@ -126,7 +126,7 @@ class DummyFigureRevive(
         val target =
             player.getLooseTargetArmorStand(TFConfig.REVIVE_MAX_RANGE)
         if (target == null || target.uniqueId != figure.figureUUID) {
-            player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
+            player.removeMetadata("tf_holdRevive", TFPlugin.instance)
             player.resetTitle()
             figure.reviving = false
             task.cancel()
@@ -154,7 +154,7 @@ class DummyFigureRevive(
             ))
             if (progress >= maxProgress) {
                 figure.respawn()
-                player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
+                player.removeMetadata("tf_holdRevive", TFPlugin.instance)
                 player.resetTitle()
                 task.cancel()
             }

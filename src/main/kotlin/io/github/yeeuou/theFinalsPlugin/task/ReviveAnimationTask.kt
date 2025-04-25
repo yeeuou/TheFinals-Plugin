@@ -3,8 +3,8 @@ package io.github.yeeuou.theFinalsPlugin.task
 import io.github.yeeuou.theFinalsPlugin.Figure
 import io.github.yeeuou.theFinalsPlugin.Figure.Companion.figure
 import io.github.yeeuou.theFinalsPlugin.TFConfig
-import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
-import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetArmorStand
+import io.github.yeeuou.theFinalsPlugin.TFPlugin
+import io.github.yeeuou.theFinalsPlugin.TFPlugin.Companion.getLooseTargetArmorStand
 import io.papermc.paper.util.Tick
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
@@ -22,7 +22,7 @@ class ReviveAnimationTask(
     private val figure: Figure
 ) : Consumer<BukkitTask> {
     private companion object {
-        val key = NamespacedKey(TheFinalsPlugin.instance, "multiple_0")
+        val key = NamespacedKey(TFPlugin.instance, "multiple_0")
         val multiplyZeroModifier = AttributeModifier(key, -1.0,
             AttributeModifier.Operation.MULTIPLY_SCALAR_1)
     }
@@ -36,7 +36,7 @@ class ReviveAnimationTask(
         val targetedFigure =
             player.getLooseTargetArmorStand(TFConfig.REVIVE_MAX_RANGE)?.figure()
         if (targetedFigure == null || targetedFigure != figure) {
-            player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
+            player.removeMetadata("tf_holdRevive", TFPlugin.instance)
             player.getAttribute(Attribute.MOVEMENT_SPEED)?.removeModifier(key)
             player.getAttribute(Attribute.JUMP_STRENGTH)?.removeModifier(key)
             task.cancel()
@@ -74,7 +74,7 @@ class ReviveAnimationTask(
 //            ))
             if (progress >= reviveMaxProgress) {
                 figure.owner.reviveFromFigure()
-                player.removeMetadata("tf_holdRevive", TheFinalsPlugin.instance)
+                player.removeMetadata("tf_holdRevive", TFPlugin.instance)
                 player.getAttribute(Attribute.MOVEMENT_SPEED)?.removeModifier(key)
                 player.getAttribute(Attribute.JUMP_STRENGTH)?.removeModifier(key)
                 player.resetTitle()

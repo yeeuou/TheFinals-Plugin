@@ -7,7 +7,6 @@ import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
 import org.bukkit.Bukkit
 import org.bukkit.configuration.file.YamlConfiguration
-import org.bukkit.entity.ArmorStand
 import org.bukkit.scoreboard.Team
 import java.io.File
 import java.time.Duration
@@ -15,12 +14,12 @@ import java.time.Duration
 enum class TFTeam(color: NamedTextColor) {
     LIVE_WIRES(NamedTextColor.BLUE), RETROS(NamedTextColor.RED),
     MIGHTY(NamedTextColor.DARK_PURPLE), BOUNDLESS(NamedTextColor.LIGHT_PURPLE),
-    BOGGS(NamedTextColor.GOLD), BIG_SPLASH(NamedTextColor.GREEN),
-    SOCIAL_RIGHTS(NamedTextColor.AQUA), SHOCK_N_OH(NamedTextColor.YELLOW),
-    STEAMROLLER(NamedTextColor.BLACK), OVERDOX(NamedTextColor.GRAY),
-    ULTRA_RARE(NamedTextColor.DARK_GREEN), JET_SETTERS(NamedTextColor.DARK_BLUE),
+    VOGUES(NamedTextColor.GOLD), BIG_SPLASH(NamedTextColor.GREEN),
+    SOCIALITES(NamedTextColor.AQUA), SHOCK_AND_AWE(NamedTextColor.YELLOW),
+    STEAMROLLERS(NamedTextColor.BLACK), OVERDOGS(NamedTextColor.GRAY),
+    ULTRA_RARES(NamedTextColor.DARK_GREEN), JET_SETTERS(NamedTextColor.DARK_BLUE),
     KINGFISH(NamedTextColor.DARK_RED), TOUGH_SHELLS(NamedTextColor.DARK_GRAY),
-    POWER_HOUSE(NamedTextColor.DARK_AQUA), HI_NOTES(NamedTextColor.WHITE);
+    POWERHOUSES(NamedTextColor.DARK_AQUA), HIGH_NOTES(NamedTextColor.WHITE);
 
     companion object {
         val nameByTeam = buildMap {
@@ -29,7 +28,7 @@ enum class TFTeam(color: NamedTextColor) {
             }
         }
         private val colorDefFile =
-            File(TheFinalsPlugin.instance.dataFolder, "teamColor.yml")
+            File(TFPlugin.instance.dataFolder, "teamColor.yml")
         private const val KEY_ROOT = "TFTeamColor"
         fun loadColor() {
             if (!colorDefFile.exists()) {
@@ -39,7 +38,7 @@ enum class TFTeam(color: NamedTextColor) {
             val config = YamlConfiguration.loadConfiguration(colorDefFile)
             val root = config.getConfigurationSection(KEY_ROOT)
             if (root == null) {
-                TheFinalsPlugin.instance.logger
+                TFPlugin.instance.logger
                     .warning("'teamColor.yml' has unknown key $KEY_ROOT. ignored it.")
                 return
             }

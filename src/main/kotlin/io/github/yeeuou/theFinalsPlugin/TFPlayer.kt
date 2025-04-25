@@ -43,7 +43,7 @@ class TFPlayer private constructor (
             TFPlayer(p, team)
         }
 
-        val playerDataFolder = File(TheFinalsPlugin.instance.dataFolder, "players")
+        val playerDataFolder = File(TFPlugin.instance.dataFolder, "players")
 
         private const val KEY_ROOT = "TFPlayer"
         private const val KEY_TEAM = "tfTeam"
@@ -114,13 +114,13 @@ class TFPlayer private constructor (
         if (isDead) {
             if (coin <= 0)
                 Bukkit.getScheduler().runTaskTimer(
-                    TheFinalsPlugin.instance,
+                    TFPlugin.instance,
                     WaitReviveFromTeam(),
                     0, 1
                 )
             else
                 Bukkit.getScheduler().runTaskTimer(
-                    TheFinalsPlugin.instance,
+                    TFPlugin.instance,
                     DiedOnLoad(),
                     0, 20
                 )
@@ -188,19 +188,19 @@ class TFPlayer private constructor (
         else {
             figure.spawn()
             Bukkit.getScheduler().runTaskTimer(
-                TheFinalsPlugin.instance,
+                TFPlugin.instance,
                 SpectateOnTeam(),
                 20 * 3, 1
             )
             if (coin > 0) {
                 respawnTime = TFConfig.playerRespawnTick - 20
                 Bukkit.getScheduler().runTaskTimer(
-                    TheFinalsPlugin.instance,
+                    TFPlugin.instance,
                     WaitRespawnTime(),
                     0, 1
                 )
             } else Bukkit.getScheduler().runTaskTimer(
-                TheFinalsPlugin.instance,
+                TFPlugin.instance,
                 WaitReviveFromTeam(),
                 0, 1
             )
@@ -235,7 +235,7 @@ class TFPlayer private constructor (
         isDead = false
         figure.remove()
         Bukkit.getScheduler().runTaskLater(
-            TheFinalsPlugin.instance,
+            TFPlugin.instance,
             { -> respawn(true) },
             10
         )
@@ -255,7 +255,7 @@ class TFPlayer private constructor (
         player.beeStingersInBody = 0
     }
 
-    fun grab(figure: Figure) {
+    internal fun grab(figure: Figure) {
         playerGrabFigure[this] = figure
     }
 
@@ -285,7 +285,7 @@ class TFPlayer private constructor (
                 )
             else {
                 Bukkit.getScheduler().runTaskTimer(
-                    TheFinalsPlugin.instance,
+                    TFPlugin.instance,
                     PressStartTask(),
                     0, 1
                 )
@@ -324,14 +324,14 @@ class TFPlayer private constructor (
             }
         }
     }
-    fun startTeamRespawnTask() {
+    internal fun startTeamRespawnTask() {
         respawnTime = TFConfig.teamRespawnTick - 5
         waitTeamRespawn = true
         spectatorPlayers.remove(this)
         player.spectatorTarget = null
         figure.remove()
         Bukkit.getScheduler().runTaskTimer(
-            TheFinalsPlugin.instance,
+            TFPlugin.instance,
             WaitTeamRespawn(),
             0, 20
         )
@@ -382,6 +382,14 @@ class TFPlayer private constructor (
         }
     }
 
+    internal fun spectator(p: TFPlayer) {
+        if (!isDead) return
+        spectatorPlayers.remove(this)
+        player.spectatorTarget = null
+        spectatorPlayers[this] = p
+        player.spectatorTarget = p.player
+    }
+
     private inner class SpectateOnTeam : Consumer<BukkitTask> {
         override fun accept(task: BukkitTask) {
             if (!isDead || waitTeamRespawn) {
@@ -390,8 +398,14 @@ class TFPlayer private constructor (
             }
             if (getSpectatePlayer() == null)
                 spectatorPlayers[this@TFPlayer] = tfTeam.getFirstAlivePlayer()
-            if (player.spectatorTarget == null)
-                player.spectatorTarget = getSpectatePlayer()?.player
+            val spectatePlayer = getSpectatePlayer()!!
+            if (player.spectatorTarget == null) {
+                spectator(spectatePlayer)
+                return
+            }
+            // re-attach player
+            if (player.location != spectatePlayer.player.location)
+                spectator(spectatePlayer)
         }
     }
 }

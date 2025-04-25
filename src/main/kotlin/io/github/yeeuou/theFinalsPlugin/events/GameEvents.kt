@@ -10,10 +10,10 @@ import io.github.yeeuou.theFinalsPlugin.TFConfig
 import io.github.yeeuou.theFinalsPlugin.TFPlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.getSpectatePlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
-import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin
-import io.github.yeeuou.theFinalsPlugin.TheFinalsPlugin.Companion.getLooseTargetArmorStand
-import io.github.yeeuou.theFinalsPlugin.task.GrabFigureTask
+import io.github.yeeuou.theFinalsPlugin.TFPlugin
+import io.github.yeeuou.theFinalsPlugin.TFPlugin.Companion.getLooseTargetArmorStand
 import io.github.yeeuou.theFinalsPlugin.task.ReviveAnimationTask
+import io.papermc.paper.event.player.PrePlayerAttackEntityEvent
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.entity.ArmorStand
@@ -29,6 +29,7 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerTeleportEvent
+import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.util.Vector
 
@@ -63,7 +64,7 @@ class GameEvents : Listener {
     @EventHandler
     fun playerLookAtFigure(ev: PlayerMoveEvent) {
         ev.player.getMetadata("tf_holdRevive")
-            .forEach { if (it.owningPlugin is TheFinalsPlugin) return }
+            .forEach { if (it.owningPlugin is TFPlugin) return }
         ev.player.tfPlayer()?.run {
             if (this in TFPlayer.playerGrabFigure) return
             val targetEntity =
@@ -72,9 +73,9 @@ class GameEvents : Listener {
                 // is self & check team
                 if (it.owner == this || it.owner.tfTeam != this.tfTeam) return
                 player.setMetadata("tf_holdRevive",
-                    FixedMetadataValue(TheFinalsPlugin.instance, null))
+                    FixedMetadataValue(TFPlugin.instance, null))
                 Bukkit.getServer().scheduler.runTaskTimer(
-                    TheFinalsPlugin.instance,
+                    TFPlugin.instance,
                     ReviveAnimationTask(player, it),
                     0L, 1L
                 )
@@ -83,9 +84,9 @@ class GameEvents : Listener {
         ev.player.getLooseTargetArmorStand(TFConfig.REVIVE_MAX_RANGE)?.let {
             it.asDummyFigure()?.run {
                 ev.player.setMetadata("tf_holdRevive",
-                    FixedMetadataValue(TheFinalsPlugin.instance, null))
+                    FixedMetadataValue(TFPlugin.instance, null))
                 Bukkit.getScheduler().runTaskTimer(
-                    TheFinalsPlugin.instance,
+                    TFPlugin.instance,
                     DummyFigureRevive(ev.player, this),
                     0, 1
                 )
@@ -113,17 +114,18 @@ class GameEvents : Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler // 관전모드중에는 마우스 클릭을 제대로 감지하지 못함
     fun spectatorClickMouseBtn(ev: PlayerInteractEvent) {
         if (ev.player.gameMode != GameMode.SPECTATOR) return
         ev.player.tfPlayer()?.run {
             if (!isDead || tfTeam.isAllPlayerDead()) return
             runCatching {
-                player.spectatorTarget = runCatching {
-                    if (ev.action.isRightClick) {
-                        tfTeam.getPrevAlivePlayer(getSpectatePlayer()!!).player
-                    } else tfTeam.getNextAlivePlayer(getSpectatePlayer()!!).player
-                }.getOrElse { tfTeam.getFirstAlivePlayer().player }
+                runCatching {
+                    if (ev.action.isRightClick)
+                        tfTeam.getPrevAlivePlayer(getSpectatePlayer()!!)
+                    else tfTeam.getNextAlivePlayer(getSpectatePlayer()!!)
+                }.getOrElse { tfTeam.getFirstAlivePlayer() }
+                    .also { spectator(it); this.player.sendMessage("new spectator: ${it.player.name}") }
             }.onFailure { it.printStackTrace() }
         }
     }
@@ -134,13 +136,28 @@ class GameEvents : Listener {
         ev.player.tfPlayer()?.run {
             if (grabFigure == null && ev.action.isLeftClick) {
                 player.getLooseTargetArmorStand(TFConfig.GRAB_MAX_RANGE)
-                    ?.figure()?.startGrabTask(this)
-                ev.isCancelled = true
+                    ?.figure()?.let {
+                        it.startGrabTask(this)
+                        ev.isCancelled = true
+                    }
                 return
             }
             if (grabFigure == null) return
             if (ev.action.isLeftClick) throwFigure()
             else putDownFigure()
+            ev.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun onPlayerAttackFigure(ev: PrePlayerAttackEntityEvent) {
+        ev.player.tfPlayer()?.run {
+            if (grabFigure != null) return
+            (ev.attacked as? ArmorStand)?.figure()
+                ?.let {
+                    it.startGrabTask(this)
+                    ev.isCancelled = true
+                }
         }
     }
 
@@ -158,11 +175,18 @@ class GameEvents : Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    fun exitSpector(ev: PlayerStopSpectatingEntityEvent) { // TODO 버그있음
+    fun exitSpector(ev: PlayerStopSpectatingEntityEvent) {
+        ev.player.tfPlayer()?.let {
+            if (it in TFPlayer.spectatorPlayers)
+                ev.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun toggleSneak(ev: PlayerToggleSneakEvent) {
+        if (ev.player.gameMode != GameMode.SPECTATOR || !ev.isSneaking) return
         ev.player.tfPlayer()?.run {
             if (canRespawn && isDead) lateRespawn()
-            if (this in TFPlayer.spectatorPlayers)
-                ev.isCancelled = true
         }
     }
 
@@ -183,6 +207,9 @@ class GameEvents : Listener {
 
     @EventHandler
     fun playerJoin(ev: PlayerJoinEvent) {
-        TFPlayer.tryLoad(ev.player)
+        runCatching{ TFPlayer.tryLoad(ev.player) }
+            .onFailure {
+                TFPlugin.instance.logger.warning("Failed load player: ${it.message}")
+            }
     }
 }

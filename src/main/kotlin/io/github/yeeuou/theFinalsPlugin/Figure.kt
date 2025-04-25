@@ -1,12 +1,10 @@
 package io.github.yeeuou.theFinalsPlugin
 
 import io.github.yeeuou.theFinalsPlugin.task.GrabFigureTask
-import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Material
-import org.bukkit.Particle
 import org.bukkit.entity.ArmorStand
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
@@ -83,7 +81,7 @@ class Figure(
     fun startGrabTask(p: TFPlayer) {
         checkNotNull(figureEntity) { "No grab entity" }
         Bukkit.getScheduler().runTaskTimer(
-            TheFinalsPlugin.instance,
+            TFPlugin.instance,
             GrabFigureTask(p, this, figureEntity!!),
             0, 1
         )
@@ -100,6 +98,7 @@ class Figure(
         eyeLoc.clone().let {
             figureEntity!!.teleport(it
                 .add(it.direction.normalize().multiply(.75))
+                .add(.0, -.5, .0)
                 .apply { yaw -= 180 })
         }
     }
@@ -111,7 +110,7 @@ class Figure(
         private lateinit var task: BukkitTask
         fun startTask() {
             task = Bukkit.getScheduler().runTaskTimer(
-                TheFinalsPlugin.instance,
+                TFPlugin.instance,
                 Task(), 0, 1
             )
         }
