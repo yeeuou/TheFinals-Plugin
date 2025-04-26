@@ -44,25 +44,10 @@ class TFPlugin : JavaPlugin() {
 //                    "팀의 색을 바꿉니다. 색을 바꾸면 바꿀 색의 팀과 교체됩니다.")
 //            }
             // TESTING ONLY
-            it.registrar().register(testCmd)
             it.registrar().register(ColorTest.cmd)
             // ========
         }
     }
-
-    private val testCmd = Commands.literal("newDummy")
-        .executes { ctx ->
-            if (ctx.source.sender is Player) {
-                val loc = (ctx.source.sender as Player).location
-                loc.world.spawn(loc, Pillager::class.java) {
-                    it.setAI(false)
-                    it.setGravity(false)
-                    it.equipment.setItemInMainHand(null)
-                    DummyPlayer(it)
-                }
-            }
-            Command.SINGLE_SUCCESS
-        }.build()
 
     override fun onDisable() {
         // remove test team

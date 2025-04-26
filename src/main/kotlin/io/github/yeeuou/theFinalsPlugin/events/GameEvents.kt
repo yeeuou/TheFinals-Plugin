@@ -2,37 +2,29 @@ package io.github.yeeuou.theFinalsPlugin.events
 
 import com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent
 import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent
-import io.github.yeeuou.theFinalsPlugin.DummyFigureRevive
-import io.github.yeeuou.theFinalsPlugin.DummyPlayer
-import io.github.yeeuou.theFinalsPlugin.DummyPlayer.Companion.asDummyFigure
 import io.github.yeeuou.theFinalsPlugin.Figure.Companion.figure
 import io.github.yeeuou.theFinalsPlugin.TFConfig
 import io.github.yeeuou.theFinalsPlugin.TFPlayer
-import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.getSpectatePlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.github.yeeuou.theFinalsPlugin.TFPlugin
 import io.github.yeeuou.theFinalsPlugin.TFPlugin.Companion.getLooseTargetArmorStand
 import io.github.yeeuou.theFinalsPlugin.task.ReviveAnimationTask
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent
-import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerAdvancementDoneEvent
-import org.bukkit.event.player.PlayerInputEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerTeleportEvent
-import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.util.Vector
 
@@ -52,9 +44,6 @@ class GameEvents : Listener {
         (ev.entity as? ArmorStand)?.figure()?.let {
             ev.isCancelled = true
             return
-        }
-        (ev.entity as? ArmorStand)?.asDummyFigure()?.let {
-            ev.isCancelled = true
         }
     }
 
@@ -83,26 +72,6 @@ class GameEvents : Listener {
                     0L, 1L
                 )
             }
-        }
-        ev.player.getLooseTargetArmorStand(TFConfig.REVIVE_MAX_RANGE)?.let {
-            it.asDummyFigure()?.run {
-                ev.player.setMetadata("tf_holdRevive",
-                    FixedMetadataValue(TFPlugin.instance, null))
-                Bukkit.getScheduler().runTaskTimer(
-                    TFPlugin.instance,
-                    DummyFigureRevive(ev.player, this),
-                    0, 1
-                )
-            }
-        }
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    fun dummyPlayerDead(ev: EntityDeathEvent) {
-        if (ev.entity is Player) return
-        DummyPlayer.entityByDummy[ev.entity]?.run {
-            ev.isCancelled = true
-            playDeadEffect()
         }
     }
 

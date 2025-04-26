@@ -244,7 +244,7 @@ class TFPlayer private constructor (
         player.gameMode = GameMode.SURVIVAL
         player.teleport(loc)
         player.spawnParticle(Particle.TOTEM_OF_UNDYING, loc, 350)
-        player.playSound(player, Sound.ITEM_TOTEM_USE, .25f, 1.6f)
+        player.world.playSound(player.location, Sound.ITEM_TOTEM_USE, .25f, 1.6f)
         player.noDamageTicks = 20 * 2
         player.foodLevel = 20
         player.saturation = 5f
