@@ -2,6 +2,8 @@
 
 게임 [THE FINALS](https://www.reachthefinals.com)를 따라 만든 플러그인 입니다.
 
+Paper `1.21.4` 버전 사용
+
 # 주요 기능
 
 게임에 나오는 요소중 **팀 시스템**에서 아이디어를 얻어 구현했습니다.
