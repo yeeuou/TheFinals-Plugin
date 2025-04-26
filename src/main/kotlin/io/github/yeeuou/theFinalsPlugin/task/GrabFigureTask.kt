@@ -22,7 +22,7 @@ class GrabFigureTask(
         }
         val eyeDir = tfPlayer.player.eyeLocation.direction.normalize()
         val mvRight = eyeDir.clone().crossProduct(Vector(0, 1, 0)).normalize()
-        stand.teleport(tfPlayer.player.eyeLocation.add(.0, -.5, .0).add(
+        stand.teleport(tfPlayer.player.eyeLocation.add(.0, -.6, .0).add(
             eyeDir.multiply(.9).add(mvRight.multiply(.5))
         ).apply { yaw -= 180 })
     }

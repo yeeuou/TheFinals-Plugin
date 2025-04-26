@@ -77,7 +77,7 @@ enum class TFTeam(color: NamedTextColor) {
 
     private val players = mutableListOf<TFPlayer>()
 
-    var color = color
+    internal var color = color
         private set(c) {
             team.color(c)
             field = c
@@ -90,11 +90,11 @@ enum class TFTeam(color: NamedTextColor) {
         return true
     }
 
-    fun addPlayer(p: TFPlayer) {
+    internal fun addPlayer(p: TFPlayer) {
         players.add(p)
         team.addPlayer(p.player)
     }
-    fun removePlayer(p: TFPlayer) {
+    internal fun removePlayer(p: TFPlayer) {
         players.remove(p)
         team.removePlayer(p.player)
         if (players.isNotEmpty() && isAllPlayerDead())
@@ -124,7 +124,7 @@ enum class TFTeam(color: NamedTextColor) {
     fun getFirstAlivePlayer() = players.firstOrNull { !it.isDead }
         ?: throw IllegalStateException("This team is wiped.")
 
-    fun playTeamWipeEffect() {
+    internal fun playTeamWipeEffect() {
         players.forEach {
             it.player.run {
                 showTitle(

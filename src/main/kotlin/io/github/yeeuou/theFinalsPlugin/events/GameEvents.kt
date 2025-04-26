@@ -14,16 +14,19 @@ import io.github.yeeuou.theFinalsPlugin.TFPlugin
 import io.github.yeeuou.theFinalsPlugin.TFPlugin.Companion.getLooseTargetArmorStand
 import io.github.yeeuou.theFinalsPlugin.task.ReviveAnimationTask
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerAdvancementDoneEvent
+import org.bukkit.event.player.PlayerInputEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
@@ -114,22 +117,6 @@ class GameEvents : Listener {
         }
     }
 
-    @EventHandler // 관전모드중에는 마우스 클릭을 제대로 감지하지 못함
-    fun spectatorClickMouseBtn(ev: PlayerInteractEvent) {
-        if (ev.player.gameMode != GameMode.SPECTATOR) return
-        ev.player.tfPlayer()?.run {
-            if (!isDead || tfTeam.isAllPlayerDead()) return
-            runCatching {
-                runCatching {
-                    if (ev.action.isRightClick)
-                        tfTeam.getPrevAlivePlayer(getSpectatePlayer()!!)
-                    else tfTeam.getNextAlivePlayer(getSpectatePlayer()!!)
-                }.getOrElse { tfTeam.getFirstAlivePlayer() }
-                    .also { spectator(it); this.player.sendMessage("new spectator: ${it.player.name}") }
-            }.onFailure { it.printStackTrace() }
-        }
-    }
-
     @EventHandler
     fun onClickMouseBtn(ev: PlayerInteractEvent) {
         if (ev.player.gameMode == GameMode.SPECTATOR) return
@@ -179,14 +166,6 @@ class GameEvents : Listener {
         ev.player.tfPlayer()?.let {
             if (it in TFPlayer.spectatorPlayers)
                 ev.isCancelled = true
-        }
-    }
-
-    @EventHandler
-    fun toggleSneak(ev: PlayerToggleSneakEvent) {
-        if (ev.player.gameMode != GameMode.SPECTATOR || !ev.isSneaking) return
-        ev.player.tfPlayer()?.run {
-            if (canRespawn && isDead) lateRespawn()
         }
     }
 

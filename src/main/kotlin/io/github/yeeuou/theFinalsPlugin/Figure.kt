@@ -1,6 +1,7 @@
 package io.github.yeeuou.theFinalsPlugin
 
 import io.github.yeeuou.theFinalsPlugin.task.GrabFigureTask
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.Location
@@ -18,7 +19,7 @@ class Figure(
     val owner: TFPlayer
 ) {
     companion object {
-        val spawnedFigures = mutableMapOf<ArmorStand, Figure>()
+        private val spawnedFigures = mutableMapOf<ArmorStand, Figure>()
         fun ArmorStand.figure() = spawnedFigures[this]
     }
 
@@ -29,7 +30,7 @@ class Figure(
     val figureLoc
         get() = figureEntity?.location
 
-    fun spawn() {
+    internal fun spawn() {
         if (!owner.isDead) return
         val color = Color.fromRGB(owner.tfTeam.color.value())
         figureEntity = owner.player.run {
@@ -67,7 +68,7 @@ class Figure(
 //        owner.tfTeam.addFigure(figureEntity!!)
     }
 
-    fun remove() {
+    internal fun remove() {
 //        if (!owner.isDead) return
         overlapHandler?.cancelTask()
         // 잡기 해제
@@ -80,6 +81,16 @@ class Figure(
 
     fun startGrabTask(p: TFPlayer) {
         checkNotNull(figureEntity) { "No grab entity" }
+        p.player.sendActionBar(Component.text()
+            .append(Component.text('['),
+                Component.keybind("key.mouse.left"),
+                Component.text(']')
+            ).append(Component.text(" 던지기 | "))
+            .append(Component.text('['),
+                Component.keybind("key.mouse.right"),
+                Component.text(']')
+            ).append(Component.text(" 놓기"))
+        )
         Bukkit.getScheduler().runTaskTimer(
             TFPlugin.instance,
             GrabFigureTask(p, this, figureEntity!!),
@@ -87,18 +98,18 @@ class Figure(
         )
     }
 
-    fun throwIt(eyeLoc: Location, vec: Vector) {
+    internal fun throwIt(eyeLoc: Location, vec: Vector) {
         if (figureEntity == null) return
         putDownIt(eyeLoc)
         figureEntity!!.velocity = vec.normalize()
     }
 
-    fun putDownIt(eyeLoc: Location) {
+    internal fun putDownIt(eyeLoc: Location) {
         if (figureEntity == null) return
         eyeLoc.clone().let {
             figureEntity!!.teleport(it
                 .add(it.direction.normalize().multiply(.75))
-                .add(.0, -.5, .0)
+                .add(.0, -.6, .0)
                 .apply { yaw -= 180 })
         }
     }

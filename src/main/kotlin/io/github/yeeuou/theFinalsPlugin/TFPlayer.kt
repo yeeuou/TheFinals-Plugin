@@ -33,7 +33,7 @@ class TFPlayer private constructor (
             NamedTextColor.DARK_PURPLE
         )
 
-        val playerByPlayers = mutableMapOf<Player, TFPlayer>()
+        private val playerByPlayers = mutableMapOf<Player, TFPlayer>()
         fun Player.tfPlayer() = playerByPlayers[this]
         fun registerOrUpdatePlayer(p: Player, team: TFTeam) {
             p.tfPlayer()?.run {
@@ -43,7 +43,7 @@ class TFPlayer private constructor (
             TFPlayer(p, team)
         }
 
-        val playerDataFolder = File(TFPlugin.instance.dataFolder, "players")
+        private val playerDataFolder = File(TFPlugin.instance.dataFolder, "players")
 
         private const val KEY_ROOT = "TFPlayer"
         private const val KEY_TEAM = "tfTeam"
@@ -89,9 +89,6 @@ class TFPlayer private constructor (
     private var coin: Int = TFConfig.startCoin
 
     private var respawnTime = 0
-
-    val canRespawn
-        get() = respawnTime <= 0 && coin > 0
 
     var isDead = false
         private set
@@ -289,7 +286,7 @@ class TFPlayer private constructor (
                     PressStartTask(),
                     0, 1
                 )
-                player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, .3f, 1f)
+                player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, .2f, 1f)
                 task.cancel()
             }
         }
@@ -358,10 +355,17 @@ class TFPlayer private constructor (
 
         override fun accept(task: BukkitTask) {
             if (!isDead || waitTeamRespawn) {
-                if (!waitTeamRespawn) { // 팀 전멸 타이틀을 지우지 않도록 처리
-                    player.resetTitle()
-                    player.sendActionBar(Component.text())
-                }
+//                if (!waitTeamRespawn) { // 팀 전멸 타이틀을 지우지 않도록 처리
+//                    player.resetTitle()
+//                    player.sendActionBar(Component.text())
+//                }
+                task.cancel()
+                return
+            }
+            if (player.currentInput.isJump) {
+                player.resetTitle()
+                player.sendActionBar(Component.text())
+                lateRespawn()
                 task.cancel()
                 return
             }
@@ -375,8 +379,10 @@ class TFPlayer private constructor (
             player.sendActionBar(
                 Component.text()
                     .append(
-                        Component.text("[웅크리기로 부활] ")
+                        Component.text('[')
                             .decorate(TextDecoration.ITALIC).color(NamedTextColor.GRAY)
+                            .append(Component.keybind("key.jump"))
+                            .append(Component.text("(으)로 부활] "))
                     ).append(Component.text("크레딧 $coin"))
             )
         }
@@ -391,6 +397,27 @@ class TFPlayer private constructor (
     }
 
     private inner class SpectateOnTeam : Consumer<BukkitTask> {
+        private var lastInput = 0 // -1, 0, 1 <=> L, None, R
+        init {
+            Bukkit.getScheduler().runTaskLater(
+                TFPlugin.instance,
+                { ->
+                    player.sendMessage(Component.text("",
+                        NamedTextColor.GRAY, TextDecoration.ITALIC)
+                        .append(
+                            Component.text('['),
+                            Component.keybind("key.left"),
+                            Component.text(']')
+                        ).append(Component.text("나 "))
+                        .append(
+                            Component.text('['),
+                            Component.keybind("key.right"),
+                            Component.text(']')
+                        ).append(Component.text("으로 플레이어 관전"))
+                    )
+                }, 60
+            )
+        }
         override fun accept(task: BukkitTask) {
             if (!isDead || waitTeamRespawn) {
                 task.cancel()
@@ -406,6 +433,23 @@ class TFPlayer private constructor (
             // re-attach player
             if (player.location != spectatePlayer.player.location)
                 spectator(spectatePlayer)
+            // change spectating player
+            val input = player.currentInput
+            if (!(input.isLeft || input.isRight)) // reset input
+                lastInput = 0
+            // prevent repeat input
+            if (lastInput != 0) return
+            runCatching {
+                if (input.isRight) {
+                    spectator(tfTeam.getNextAlivePlayer(spectatePlayer))
+//                    player.sendMessage(Component.text("now player: ${spectatePlayer.player.name}"))
+                    lastInput = 1
+                } else if (input.isLeft) {
+                    spectator(tfTeam.getPrevAlivePlayer(spectatePlayer))
+//                    player.sendMessage(Component.text("now player: ${spectatePlayer.player.name}"))
+                    lastInput = -1
+                }
+            }.onFailure { it.printStackTrace() }
         }
     }
 }
