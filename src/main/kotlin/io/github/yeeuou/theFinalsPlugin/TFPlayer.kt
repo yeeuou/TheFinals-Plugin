@@ -190,7 +190,7 @@ class TFPlayer private constructor (
                 20 * 3, 1
             )
             if (coin > 0) {
-                respawnTime = TFConfig.playerRespawnTick - 20
+                respawnTime = TFConfig.playerRespawnTime
                 Bukkit.getScheduler().runTaskTimer(
                     TFPlugin.instance,
                     WaitRespawnTime(),
@@ -254,16 +254,19 @@ class TFPlayer private constructor (
 
     internal fun grab(figure: Figure) {
         playerGrabFigure[this] = figure
+        player.playSound(player, Sound.ITEM_BUNDLE_DROP_CONTENTS, .4f, 1.5f)
     }
 
     fun throwFigure() {
         if (grabFigure == null) throw IllegalStateException("Grab figure is null.")
+        player.playSound(player, Sound.ENTITY_ARROW_SHOOT, .4f, .5f)
         grabFigure!!.throwIt(player.eyeLocation, player.eyeLocation.direction.clone())
         playerGrabFigure.remove(this)
     }
 
     fun putDownFigure() {
         if (grabFigure == null) throw IllegalStateException("Grab figure is null.")
+        player.playSound(player, Sound.ITEM_BUNDLE_INSERT, .4f, 1.5f)
         grabFigure!!.putDownIt(player.eyeLocation)
         playerGrabFigure.remove(this)
     }
@@ -322,7 +325,7 @@ class TFPlayer private constructor (
         }
     }
     internal fun startTeamRespawnTask() {
-        respawnTime = TFConfig.teamRespawnTick - 5
+        respawnTime = TFConfig.teamRespawnTime
         waitTeamRespawn = true
         spectatorPlayers.remove(this)
         player.spectatorTarget = null
@@ -402,8 +405,7 @@ class TFPlayer private constructor (
             Bukkit.getScheduler().runTaskLater(
                 TFPlugin.instance,
                 { ->
-                    player.sendMessage(Component.text("",
-                        NamedTextColor.GRAY, TextDecoration.ITALIC)
+                    player.sendMessage(Component.text()
                         .append(
                             Component.text('['),
                             Component.keybind("key.left"),

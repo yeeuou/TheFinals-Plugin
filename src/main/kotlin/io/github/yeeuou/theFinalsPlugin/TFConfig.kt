@@ -11,8 +11,8 @@ object TFConfig {
         YamlConfiguration.loadConfiguration(file).getConfigurationSection("TFConfig")?.run {
             mapOf(
                 "start-coin" to ::startCoin,
-                "player-respawn-tick" to ::playerRespawnTick,
-                "team-respawn-tick" to ::teamRespawnTick
+                "player-respawn-time" to ::playerRespawnTime,
+                "team-respawn-time" to ::teamRespawnTime
             ).forEach {
                 if (isInt(it.key)) {
                     val v = getInt(it.key)
@@ -29,15 +29,15 @@ object TFConfig {
         val yaml = YamlConfiguration()
         yaml.createSection("TFConfig").run {
             set("start-coin", startCoin)
-            set("player-respawn-tick", playerRespawnTick)
-            set("team-respawn-tick", teamRespawnTick)
+            set("player-respawn-time", playerRespawnTime)
+            set("team-respawn-time", teamRespawnTime)
             set("clear-inventory-when-team-wipe", clearInventoryWhenTeamWipe)
         }
         yaml.save(file)
     }
     var startCoin = 2
-    var playerRespawnTick = 30
-    var teamRespawnTick = 15
+    var playerRespawnTime = 30
+    var teamRespawnTime = 15
     var clearInventoryWhenTeamWipe = true
     internal const val REVIVE_MAX_RANGE = 2.0
     internal const val GRAB_MAX_RANGE = 5.0

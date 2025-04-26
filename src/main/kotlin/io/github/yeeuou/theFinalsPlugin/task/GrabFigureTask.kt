@@ -16,7 +16,7 @@ class GrabFigureTask(
         tfPlayer.grab(figure)
     }
     override fun accept(task: BukkitTask) {
-        if (tfPlayer.grabFigure == null /*|| player.grabFigure != figure*/) {
+        if (tfPlayer.grabFigure == null) {
             task.cancel()
             return
         }
