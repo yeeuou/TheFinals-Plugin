@@ -30,6 +30,7 @@ class TFPlugin : JavaPlugin() {
             it.setGameRule(GameRule.KEEP_INVENTORY, true)
             it.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, true)
         }
+        TFConfig.load()
         Bukkit.getOnlinePlayers().forEach(TFPlayer::tryLoad)
         TFTeam.loadColor()
         server.pluginManager.registerEvents(GameEvents(), this)
@@ -56,6 +57,7 @@ class TFPlugin : JavaPlugin() {
                 getTeam("tf_test_$it")?.unregister()
             }
         }
+        TFConfig.save()
         Bukkit.getOnlinePlayers().forEach { it.tfPlayer()?.unload() }
     }
 

@@ -140,9 +140,11 @@ enum class TFTeam(color: NamedTextColor) {
                         )
                     )
                 )
-                inventory.clear()
-                exp = 0f
-                level = 0
+                if (TFConfig.clearInventoryWhenTeamWipe) {
+                    inventory.clear()
+                    exp = 0f
+                    level = 0
+                }
             }
             it.startTeamRespawnTask()
         }
