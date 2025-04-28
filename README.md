@@ -25,13 +25,13 @@ Paper `1.21.4` 버전을 사용했습니다.
 
 ## 플레이어 사망/부활
 
-플레이어 사망시 자리에 해당 플레이어의 **피규어**가 남습니다.
-![dead effect](assets/dead_effect.gif)
-![figure test](assets/figure_spawn_test.gif)
+플레이어 사망시 자리에 해당 플레이어의 **피규어**가 남습니다.\
+<img src="assets/dead_effect.gif" width="450"/>
+<img src="assets/figure_spawn_test.gif" width="450"/>
 
 게임과 똑같이 **집을 수** 있으며 **웅크리기를 길게 눌러** 플레이어를 부활시킬 수 있습니다.\
-![grab test1](assets/grab_test_1.gif)
-![grab test2](assets/grab_test_2.gif)
+<img src="assets/grab_test_1.gif" width="450"/>
+<img src="assets/grab_test_2.gif" width="450"/>
 
 ![revive test](assets/revive_other.gif)
 
