@@ -7,8 +7,11 @@ object TFConfig {
     private val file =
         File(TFPlugin.instance.dataFolder, "config.yml")
     internal fun load() {
-        if (!file.exists()) return
-        YamlConfiguration.loadConfiguration(file).getConfigurationSection("TFConfig")?.run {
+        if (!file.exists()) {
+            save()
+            return
+        }
+        YamlConfiguration.loadConfiguration(file).run {
             mapOf(
                 "start-coin" to ::startCoin,
                 "player-respawn-time" to ::playerRespawnTime,
@@ -26,14 +29,13 @@ object TFConfig {
         }
     }
     internal fun save() {
-        val yaml = YamlConfiguration()
-        yaml.createSection("TFConfig").run {
+        YamlConfiguration().run {
             set("start-coin", startCoin)
             set("player-respawn-time", playerRespawnTime)
             set("team-respawn-time", teamRespawnTime)
             set("clear-inventory-when-team-wipe", clearInventoryWhenTeamWipe)
+            save(file)
         }
-        yaml.save(file)
     }
     var startCoin = 2
     var playerRespawnTime = 30

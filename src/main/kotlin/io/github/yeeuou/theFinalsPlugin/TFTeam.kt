@@ -29,23 +29,16 @@ enum class TFTeam(color: NamedTextColor) {
         }
         private val colorDefFile =
             File(TFPlugin.instance.dataFolder, "teamColor.yml")
-        private const val KEY_ROOT = "TFTeamColor"
         fun loadColor() {
             if (!colorDefFile.exists()) {
                 saveColor()
                 return
             }
             val config = YamlConfiguration.loadConfiguration(colorDefFile)
-            val root = config.getConfigurationSection(KEY_ROOT)
-            if (root == null) {
-                TFPlugin.instance.logger
-                    .warning("'teamColor.yml' has unknown key $KEY_ROOT. ignored it.")
-                return
-            }
             val unsolvedTeams = mutableListOf<TFTeam>()
             val colorList = entries.map { it.color }.toMutableList()
             for ((k, v) in nameByTeam) {
-                val s = root.getString(k)
+                val s = config.getString(k)
                 if (s == null) {
                     unsolvedTeams.add(v); continue
                 }
@@ -68,9 +61,7 @@ enum class TFTeam(color: NamedTextColor) {
         private fun saveColor() {
             colorDefFile.apply { parentFile.mkdirs() }
             val yaml = YamlConfiguration()
-            yaml.createSection(KEY_ROOT).run {
-                entries.forEach { set(it.name.lowercase(), "${it.color}") }
-            }
+            nameByTeam.forEach { yaml.set(it.key, "${it.value.color}") }
             yaml.save(colorDefFile)
         }
     }

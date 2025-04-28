@@ -165,20 +165,20 @@ class TFPlayer private constructor (
     }
 
     fun playDeadEffect() {
-        player.gameMode = GameMode.SPECTATOR
         player.world.spawnParticle(
             Particle.BLOCK,
-            player.location.add(0.0 ,1.0, 0.0),
-            250,
-            .2,
-            .45,
-            .2,
+            player.location.add(0.0 ,player.height / 2, 0.0),
+            450,
+            player.width / 2,
+            player.height / 4,
+            player.width / 2,
             Material.GOLD_BLOCK.createBlockData()
         )
         player.world.playSound(
             player.location, Sound.BLOCK_CHAIN_BREAK,
             .5f, .8f
         )
+        player.gameMode = GameMode.SPECTATOR
         isDead = true
         if (tfTeam.isAllPlayerDead())
             tfTeam.playTeamWipeEffect()
@@ -190,7 +190,7 @@ class TFPlayer private constructor (
                 20 * 3, 1
             )
             if (coin > 0) {
-                respawnTime = TFConfig.playerRespawnTime
+                respawnTime = TFConfig.playerRespawnTime - 25
                 Bukkit.getScheduler().runTaskTimer(
                     TFPlugin.instance,
                     WaitRespawnTime(),
@@ -238,7 +238,7 @@ class TFPlayer private constructor (
         )
     }
 
-    private fun playerRespawnProcess(loc: Location) {
+    private fun playerRespawnProcess(loc: Location) { // TODO 서순 조정
         spectatorPlayers.remove(this)
         player.spectatorTarget = null
         player.gameMode = GameMode.SURVIVAL

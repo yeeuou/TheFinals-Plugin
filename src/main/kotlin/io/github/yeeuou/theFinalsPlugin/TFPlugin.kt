@@ -1,11 +1,9 @@
 package io.github.yeeuou.theFinalsPlugin
 
-import com.mojang.brigadier.Command
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.github.yeeuou.theFinalsPlugin.commands.ColorTest
 import io.github.yeeuou.theFinalsPlugin.commands.TFCommand
 import io.github.yeeuou.theFinalsPlugin.events.GameEvents
-import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
@@ -14,7 +12,6 @@ import org.bukkit.GameMode
 import org.bukkit.GameRule
 import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.LivingEntity
-import org.bukkit.entity.Pillager
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import kotlin.math.pow
@@ -28,7 +25,6 @@ class TFPlugin : JavaPlugin() {
         server.worlds.forEach {
             it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
             it.setGameRule(GameRule.KEEP_INVENTORY, true)
-            it.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, true)
         }
         TFConfig.load()
         Bukkit.getOnlinePlayers().forEach(TFPlayer::tryLoad)

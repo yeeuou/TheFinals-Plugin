@@ -37,10 +37,6 @@ class Figure(
             world.spawn(location.setRotation(yaw, 0f), ArmorStand::class.java) {
                 it.isSmall = true
                 it.isInvulnerable = true
-                it.setDisabledSlots(
-                    EquipmentSlot.HEAD, EquipmentSlot.CHEST,
-                    EquipmentSlot.LEGS, EquipmentSlot.FEET
-                )
                 it.equipment.run {
                     val meta = ItemStack(Material.LEATHER_HELMET).itemMeta as LeatherArmorMeta
                     meta.setColor(color)
@@ -59,7 +55,10 @@ class Figure(
                         itemMeta = meta
                     }
                 }
-//                it.boundingBox.expand(.25, .0, .25)
+                it.setDisabledSlots(
+                    EquipmentSlot.HEAD, EquipmentSlot.CHEST,
+                    EquipmentSlot.LEGS, EquipmentSlot.FEET
+                )
             }
         }
         spawnedFigures[figureEntity!!] = this
@@ -155,7 +154,6 @@ class Figure(
                             add(it.set(box.maxX, box.minY, box.minZ).block) // 2
                             add(it.set(box.minX, box.minY, box.maxZ).block) // 3
                             add(it.set(box.maxX, box.minY, box.maxZ).block) // 4
-                            add(it.block) // this position
                         }
                     }
                 }
@@ -163,8 +161,6 @@ class Figure(
                    it.isSolid && armorStand.boundingBox.overlaps(it.boundingBox) }
 
                 if (overlapped.isNotEmpty()) {
-//                    armorStand.addPotionEffect(PotionEffectType.GLOWING
-//                        .createEffect(5,0))
                     // 위가 막혔을 때
                     armorStand.location.toBlockLocation().let {
                         it.y++
@@ -181,11 +177,6 @@ class Figure(
                     }.let {
                         it.y = max(it.y, .4)
                         armorStand.velocity = it.normalize().multiply(.2)
-//                        armorStand.world.spawnParticle(
-//                            Particle.DUST,
-//                            armorStand.location.add(armorStand.velocity),
-//                            1, Particle.DustOptions(Color.RED, 1f)
-//                        )
                     }
                 }
             }

@@ -93,6 +93,8 @@ class GameEvents : Listener {
             if (grabFigure == null && ev.action.isLeftClick) {
                 player.getLooseTargetArmorStand(TFConfig.GRAB_MAX_RANGE)
                     ?.figure()?.let {
+                        // is the other team
+                        if (this.tfTeam != it.owner.tfTeam) return
                         it.startGrabTask(this)
                         ev.isCancelled = true
                     }
@@ -111,6 +113,8 @@ class GameEvents : Listener {
             if (grabFigure != null) return
             (ev.attacked as? ArmorStand)?.figure()
                 ?.let {
+                    // is the other team
+                    if (this.tfTeam != it.owner.tfTeam) return
                     it.startGrabTask(this)
                     ev.isCancelled = true
                 }
