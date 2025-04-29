@@ -2,6 +2,7 @@ package io.github.yeeuou.theFinalsPlugin
 
 import io.github.yeeuou.theFinalsPlugin.TFPlayer.Companion.tfPlayer
 import io.github.yeeuou.theFinalsPlugin.commands.ColorTest
+import io.github.yeeuou.theFinalsPlugin.commands.GiveCoinCommand
 import io.github.yeeuou.theFinalsPlugin.commands.TFCommand
 import io.github.yeeuou.theFinalsPlugin.events.GameEvents
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
@@ -17,10 +18,6 @@ import org.bukkit.plugin.java.JavaPlugin
 import kotlin.math.pow
 
 class TFPlugin : JavaPlugin() {
-    init {
-        pl = this
-    }
-
     override fun onEnable() {
         server.worlds.forEach {
             it.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true)
@@ -31,7 +28,11 @@ class TFPlugin : JavaPlugin() {
         TFTeam.loadColor()
         server.pluginManager.registerEvents(GameEvents(), this)
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
-            it.registrar().register(TFCommand.mainCmd)
+            it.registrar().run {
+                register(TFCommand.mainCmd)
+                register(GiveCoinCommand.cmd,
+                    "플레이어에게 코인을 지급합니다.\n코인이 없던 플레이어는 부활할 수 없습니다.")
+            }
 //            it.registrar().run {
 //                register(JoinTFTeamCommand.joinCmd,
 //                    "팀에 자신(또는 다른 사람)을 등록해 보세요!")
@@ -44,9 +45,11 @@ class TFPlugin : JavaPlugin() {
             it.registrar().register(ColorTest.cmd)
             // ========
         }
+        loaded = true
     }
 
     override fun onDisable() {
+        loaded = false
         // remove test team
         NamedTextColor.NAMES.values().forEach {
             server.scoreboardManager.mainScoreboard.run {
@@ -54,13 +57,21 @@ class TFPlugin : JavaPlugin() {
             }
         }
         TFConfig.save()
+        TFTeam.saveColor()
         Bukkit.getOnlinePlayers().forEach { it.tfPlayer()?.unload() }
+    }
+
+    init {
+        pl = this
     }
 
     companion object {
         private lateinit var pl: JavaPlugin
         val instance
             get() = pl
+
+        var loaded = false
+            private set
 
         fun Player.getLooseTargetArmorStand(maxDistance: Number): ArmorStand? {
             val distanceD = maxDistance.toDouble()

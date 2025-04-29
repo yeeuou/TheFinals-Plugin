@@ -7,9 +7,11 @@ import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.Ticks
 import org.bukkit.Bukkit
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.scheduler.BukkitTask
 import org.bukkit.scoreboard.Team
 import java.io.File
 import java.time.Duration
+import java.util.function.Consumer
 
 enum class TFTeam(color: NamedTextColor) {
     LIVE_WIRES(NamedTextColor.BLUE), RETROS(NamedTextColor.RED),
@@ -58,7 +60,7 @@ enum class TFTeam(color: NamedTextColor) {
                 saveColor()
             }
         }
-        private fun saveColor() {
+        internal fun saveColor() {
             colorDefFile.apply { parentFile.mkdirs() }
             val yaml = YamlConfiguration()
             nameByTeam.forEach { yaml.set(it.key, "${it.value.color}") }
@@ -74,6 +76,11 @@ enum class TFTeam(color: NamedTextColor) {
             field = c
         }
 
+    var teamWiped = false
+        private set
+
+    private var teamRespawnTime = 0
+
     fun isAllPlayerDead(): Boolean {
         players.forEach {
             if (!it.isDead) return false
@@ -88,14 +95,16 @@ enum class TFTeam(color: NamedTextColor) {
     internal fun removePlayer(p: TFPlayer) {
         players.remove(p)
         team.removePlayer(p.player)
-        if (players.isNotEmpty() && isAllPlayerDead())
+        if (TFPlugin.loaded && !teamWiped
+            && players.isNotEmpty() && isAllPlayerDead())
             playTeamWipeEffect()
     }
 
     // 다음 플레이어 관전
     fun getNextAlivePlayer(current: TFPlayer): TFPlayer {
+        check(!teamWiped) { "This team already wiped." }
         val alivePlayers = players.filter { !it.isDead }
-        if (alivePlayers.isEmpty()) throw IllegalStateException("This team is wiped.")
+//        if (alivePlayers.isEmpty()) throw IllegalStateException("This team is wiped.")
         // 한명만 살았을 때
         if (alivePlayers.size == 1) return current
         val currentIndex = alivePlayers.indexOf(current)
@@ -104,18 +113,21 @@ enum class TFTeam(color: NamedTextColor) {
 
     // 이전 플레이어 관전
     fun getPrevAlivePlayer(current: TFPlayer): TFPlayer {
+        check(!teamWiped) { "This team already wiped." }
         val alivePlayers = players.filter { !it.isDead }
-        if (alivePlayers.isEmpty()) throw IllegalStateException("This team is wiped.")
+//        if (alivePlayers.isEmpty()) throw IllegalStateException("This team is wiped.")
         // 한명만 살았을 때
         if (alivePlayers.size == 1) return current
         val currentIndex = alivePlayers.indexOf(current)
         return alivePlayers[(currentIndex - 1 + alivePlayers.lastIndex) % alivePlayers.lastIndex]
     }
 
-    fun getFirstAlivePlayer() = players.firstOrNull { !it.isDead }
-        ?: throw IllegalStateException("This team is wiped.")
+    fun getFirstAlivePlayer() =
+        checkNotNull(players.firstOrNull { !it.isDead }) { "This team already wiped." }
 
     internal fun playTeamWipeEffect() {
+        if (players.isEmpty()) return
+        teamWiped = true
         players.forEach {
             it.player.run {
                 showTitle(
@@ -137,15 +149,23 @@ enum class TFTeam(color: NamedTextColor) {
                     level = 0
                 }
             }
-            it.startTeamRespawnTask()
+            teamRespawnHandler.addPlayer(it)
+            it.onTeamWiped()
         }
+        teamRespawnHandler.startTask()
+    }
+
+    /** 성공시 true, 실패시 false */
+    internal fun tryAddTeamRespawn(p: TFPlayer): Boolean {
+        if (!teamWiped || teamRespawnTime < 6) return false
+        teamRespawnHandler.addPlayer(p)
+        return true
     }
 
     fun swapColor(newColor: NamedTextColor) {
         if (newColor == color) return
         entries.first { it.color == newColor }.color = color
         color = newColor
-        saveColor()
     }
 
 //    fun addFigure(e: ArmorStand) { // 생성된 피규어의 색이 바뀌게?
@@ -162,4 +182,48 @@ enum class TFTeam(color: NamedTextColor) {
                 setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OTHER_TEAMS)
             }
         }
+
+    private val teamRespawnHandler = TeamRespawnHandler()
+
+    private inner class TeamRespawnHandler : Consumer<BukkitTask> {
+        private val deadPlayers = mutableSetOf<TFPlayer>()
+        private var isRunning = false
+
+        fun addPlayer(p: TFPlayer) {
+            if (p.valid && p.isDead)
+                deadPlayers.add(p)
+        }
+        fun startTask() {
+            check(!isRunning) { "This team already wiped." }
+            teamRespawnTime = TFConfig.teamRespawnTime
+            Bukkit.getScheduler().runTaskTimer(
+                TFPlugin.instance,
+                this,
+                0, 20
+            )
+        }
+        override fun accept(task: BukkitTask) {
+            deadPlayers.removeIf { !it.valid }
+            if (deadPlayers.isEmpty()) {
+                teamRespawnTime = 0
+                teamWiped = false; isRunning = false
+                task.cancel()
+            }
+            if (teamRespawnTime > 0) {
+                deadPlayers.forEach {
+                    it.player.sendActionBar(
+                        Component.text("팀 리스폰까지: $teamRespawnTime")
+                    )
+                }; teamRespawnTime--
+            } else {
+                deadPlayers.forEach {
+                    it.respawn(false)
+                    it.player.sendActionBar(Component.text())
+                }
+                deadPlayers.clear()
+                teamWiped = false; isRunning = false
+                task.cancel()
+            }
+        }
+    }
 }

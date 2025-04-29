@@ -69,15 +69,16 @@ class TFPlayer private constructor (
             val tfTeam = TFTeam.nameByTeam[teamName]
                 ?: throw IllegalArgumentException("Not found team name: $teamName")
             val coin = root.getInt(KEY_COIN, TFConfig.startCoin)
-            val respawnTime = root.getInt(KEY_RESPAWN_TIME)
             val dead =
                 if (root.isBoolean(KEY_DEAD)) root.getBoolean(KEY_DEAD)
                 else throw IllegalArgumentException("$file: Unknown key $KEY_DEAD")
 
             TFPlayer(player, tfTeam).apply {
                 this.coin = coin
-                this.respawnTime = if (respawnTime > 10) respawnTime else 10
                 this.isDead = dead
+                if (dead) root.getInt(KEY_RESPAWN_TIME).let {
+                    this.respawnTime = if (it > 10) it else 10
+                }
                 initializeOnLoaded()
             }
         }
@@ -86,14 +87,17 @@ class TFPlayer private constructor (
     var tfTeam = tfTeam
         private set
 
-    private var coin: Int = TFConfig.startCoin
+    private var coin = TFConfig.startCoin
 
     private var respawnTime = 0
 
     var isDead = false
         private set
 
-    var waitTeamRespawn = false
+//    var waitTeamRespawn = false
+//        private set
+
+    var valid = true
         private set
 
     private val figure = Figure(this)
@@ -109,6 +113,8 @@ class TFPlayer private constructor (
     // 로드시 죽은 상태등을 처리
     fun initializeOnLoaded() {
         if (isDead) {
+            if (tfTeam.teamWiped && tfTeam.tryAddTeamRespawn(this))
+                return
             if (coin <= 0)
                 Bukkit.getScheduler().runTaskTimer(
                     TFPlugin.instance,
@@ -133,7 +139,7 @@ class TFPlayer private constructor (
             figure.remove()
             spectatorPlayers.remove(this)
         }
-        isDead = false // remove remaining tasks
+        valid = false
     }
 
     private fun save() {
@@ -143,8 +149,8 @@ class TFPlayer private constructor (
         yaml.createSection(KEY_ROOT).let {
             it[KEY_TEAM] = tfTeam.name
             it[KEY_COIN] = coin
-            it[KEY_RESPAWN_TIME] = respawnTime
             it[KEY_DEAD] = isDead
+            if (isDead) it[KEY_RESPAWN_TIME] = respawnTime
         }
         yaml.save(file)
     }
@@ -212,8 +218,8 @@ class TFPlayer private constructor (
         val respawnLoc = player.respawnLocation ?:
         Bukkit.getServer().worlds.first().spawnLocation.apply {
             Random(System.nanoTime()).let {
-                x += it.nextInt(-3, 3)
-                z += it.nextInt(-3, 3)
+                x += it.nextInt(-5, 5)
+                z += it.nextInt(-5, 5)
             }
         }.toCenterLocation().toHighestLocation().add(0.0,1.0,0.0)
         playerRespawnProcess(respawnLoc)
@@ -238,12 +244,12 @@ class TFPlayer private constructor (
         )
     }
 
-    private fun playerRespawnProcess(loc: Location) { // TODO 서순 조정
+    private fun playerRespawnProcess(loc: Location) {
         spectatorPlayers.remove(this)
         player.spectatorTarget = null
-        player.gameMode = GameMode.SURVIVAL
         player.teleport(loc)
         player.spawnParticle(Particle.TOTEM_OF_UNDYING, loc, 350)
+        player.gameMode = GameMode.SURVIVAL
         player.world.playSound(player.location, Sound.ITEM_TOTEM_USE, .25f, 1.6f)
         player.noDamageTicks = 20 * 2
         player.foodLevel = 20
@@ -274,7 +280,7 @@ class TFPlayer private constructor (
     private inner class WaitRespawnTime : Consumer<BukkitTask> {
         private var tick = 0
         override fun accept(task: BukkitTask) {
-            if (!isDead || waitTeamRespawn) {
+            if (!isDead || !valid || tfTeam.teamWiped) {
                 task.cancel()
                 return
             }
@@ -297,7 +303,7 @@ class TFPlayer private constructor (
 
     private inner class WaitReviveFromTeam : Consumer<BukkitTask> {
         override fun accept(task: BukkitTask) {
-            if (!isDead || waitTeamRespawn) {
+            if (!isDead || !valid || tfTeam.teamWiped) {
                 player.resetTitle()
                 task.cancel()
                 return
@@ -306,40 +312,43 @@ class TFPlayer private constructor (
         }
     }
 
-    /** 매 초마다 업데이트 */
-    private inner class WaitTeamRespawn : Consumer<BukkitTask> {
-        override fun accept(task: BukkitTask) {
-            if (!isDead) {
-                task.cancel()
-                return
-            }
-            if (respawnTime > 0)
-                player.sendActionBar(
-                    Component.text("팀 리스폰까지: ${respawnTime--}"))
-            else {
-                waitTeamRespawn = false
-                respawn(false)
-                player.sendActionBar(Component.text())
-                task.cancel()
-            }
-        }
-    }
-    internal fun startTeamRespawnTask() {
-        respawnTime = TFConfig.teamRespawnTime
-        waitTeamRespawn = true
+//    /** 매 초마다 업데이트 */
+//    private inner class WaitTeamRespawn : Consumer<BukkitTask> {
+//        override fun accept(task: BukkitTask) {
+//            if (!isDead) {
+//                task.cancel()
+//                return
+//            }
+//            if (respawnTime > 0)
+//                player.sendActionBar(
+//                    Component.text("팀 리스폰까지: ${respawnTime--}"))
+//            else {
+//                waitTeamRespawn = false
+//                respawn(false)
+//                player.sendActionBar(Component.text())
+//                task.cancel()
+//            }
+//        }
+//    }
+    internal fun onTeamWiped() {
+//        respawnTime = TFConfig.teamRespawnTime
         spectatorPlayers.remove(this)
         player.spectatorTarget = null
         figure.remove()
-        Bukkit.getScheduler().runTaskTimer(
-            TFPlugin.instance,
-            WaitTeamRespawn(),
-            0, 20
-        )
+//        Bukkit.getScheduler().runTaskTimer(
+//            TFPlugin.instance,
+//            WaitTeamRespawn(),
+//            0, 20
+//        )
     }
 
     /** 초마다 업데이트 */
     private inner class DiedOnLoad : Consumer<BukkitTask> {
         override fun accept(task: BukkitTask) {
+            if (!valid) {
+                task.cancel()
+                return
+            }
             if (respawnTime > 0)
                 player.sendActionBar(Component.text("부활까지: ${respawnTime--}"))
             else {
@@ -357,11 +366,7 @@ class TFPlayer private constructor (
         private var tick = 0
 
         override fun accept(task: BukkitTask) {
-            if (!isDead || waitTeamRespawn) {
-//                if (!waitTeamRespawn) { // 팀 전멸 타이틀을 지우지 않도록 처리
-//                    player.resetTitle()
-//                    player.sendActionBar(Component.text())
-//                }
+            if (!isDead || !valid || tfTeam.teamWiped) {
                 task.cancel()
                 return
             }
@@ -421,7 +426,7 @@ class TFPlayer private constructor (
             )
         }
         override fun accept(task: BukkitTask) {
-            if (!isDead || waitTeamRespawn) {
+            if (!isDead || !valid || tfTeam.teamWiped) {
                 task.cancel()
                 return
             }
